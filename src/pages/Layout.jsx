@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -73,8 +71,6 @@ import {
   Phone, // NOVO: Ícone de Telefone
 } from "lucide-react";
 import { motion } from "framer-motion"; // Importar motion
-import { SystemTask } from "@/api/entities/SystemTask"; // New import for SystemTask
-import { stripeEventChecker } from "@/api/functions/stripeEventChecker"; // New import for stripeEventChecker
 import NotificationBell from "@/components/notifications/NotificationBell"; // Importar o novo componente
 
 // Novas importações para o BusinessSetupForm
@@ -1377,4 +1373,3 @@ function BusinessSetupForm({ onComplete }) {
     </div>
   );
 }
-

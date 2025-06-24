@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Team, User, Plan, Subscription, Product } from "@/api/entities/index";
+import { Team, User, Plan, Subscription, Product } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
