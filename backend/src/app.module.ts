@@ -12,6 +12,11 @@ import { NotificationModule } from './notification/notification.module';
 import { PlanModule } from './plan/plan.module';
 import { PlatformReportModule } from './platform-report/platform-report.module';
 import { ProcessedEventModule } from './processed-event/processed-event.module';
+import { SubscriptionItemModule } from './subscription-item/subscription-item.module';
+import { SupportTicketModule } from './support-ticket/support-ticket.module';
+import { TeamChangeHistoryModule } from './team-change-history/team-change-history.module';
+import { TeamMemberModule } from './team-member/team-member.module';
+import { TeamSubscriptionHistoryModule } from './team-subscription-history/team-subscription-history.module';
 
 @Module({
   imports: [
@@ -31,6 +36,11 @@ import { ProcessedEventModule } from './processed-event/processed-event.module';
     PlanModule,
     PlatformReportModule,
     ProcessedEventModule,
+    SubscriptionItemModule,
+    SupportTicketModule,
+    TeamChangeHistoryModule,
+    TeamMemberModule,
+    TeamSubscriptionHistoryModule,
   ],
   controllers: [],
   providers: [],
