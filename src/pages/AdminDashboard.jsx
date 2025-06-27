@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
 import { Team } from "@/api/entities";
@@ -199,34 +200,34 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="p-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 bg-amber-200 rounded-xl"></div>
+              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
             ))}
           </div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">
           Painel Administrativo 🎯
         </h1>
-        <p className="text-amber-600">
+        <p className="text-slate-600">
           Visão geral completa da plataforma Delivery Club
         </p>
       </div>
 
       {/* Cards principais de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-100">
               Empresas Totais
@@ -246,7 +247,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-green-100">
               Receita Total
@@ -261,7 +262,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-purple-100">
               Clientes Ativos
@@ -280,7 +281,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-orange-100">
               Assinaturas Ativas
@@ -298,60 +299,60 @@ export default function AdminDashboard() {
 
       {/* Métricas de saúde da plataforma */}
       <div className="grid lg:grid-cols-4 gap-6">
-        <Card className="shadow-lg border-indigo-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-indigo-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <TrendingUp className="w-5 h-5" />
               Crescimento (30 dias)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-700">
+            <div className="text-2xl font-bold text-slate-700">
               {platformHealth.businessGrowthRate.toFixed(1)}%
             </div>
             <p className="text-sm text-gray-600">Taxa de crescimento</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-yellow-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <Star className="w-5 h-5" />
               Satisfação
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-700">
+            <div className="text-2xl font-bold text-slate-700">
               {platformHealth.customerSatisfaction}/5.0
             </div>
             <p className="text-sm text-gray-600">Avaliação média</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-red-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <Activity className="w-5 h-5" />
               Taxa de Churn
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-700">
+            <div className="text-2xl font-bold text-slate-700">
               {platformHealth.churnRate}%
             </div>
             <p className="text-sm text-gray-600">Cancelamentos</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-teal-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-teal-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <Package className="w-5 h-5" />
               Produtos Totais
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-teal-700">
+            <div className="text-2xl font-bold text-slate-700">
               {dashboardStats.totalProducts}
             </div>
             <p className="text-sm text-gray-600">Catalogados</p>
@@ -362,9 +363,9 @@ export default function AdminDashboard() {
       {/* Alertas e atividades */}
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Alertas do sistema */}
-        <Card className="shadow-lg border-amber-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <AlertTriangle className="w-5 h-5" />
               Alertas do Sistema
             </CardTitle>
@@ -423,9 +424,9 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Atividades recentes */}
-        <Card className="shadow-lg border-amber-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <Activity className="w-5 h-5" />
               Atividades Recentes
             </CardTitle>
@@ -458,32 +459,32 @@ export default function AdminDashboard() {
       </div>
 
       {/* Ações rápidas */}
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="text-amber-900">Ações Rápidas</CardTitle>
+          <CardTitle className="text-slate-900">Ações Rápidas</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Link to={createPageUrl("AdminBusinesses")}>
-              <Button className="w-full h-16 bg-amber-600 hover:bg-amber-700 flex-col gap-2">
+              <Button className="w-full h-16 bg-slate-800 hover:bg-slate-900 text-white flex-col gap-2">
                 <Building2 className="w-5 h-5" />
                 Gerenciar Empresas
               </Button>
             </Link>
             <Link to={createPageUrl("AdminUsers")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
+              <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-50 flex-col gap-2">
                 <Users className="w-5 h-5" />
                 Usuários
               </Button>
             </Link>
             <Link to={createPageUrl("AdminReports")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
+              <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-50 flex-col gap-2">
                 <TrendingUp className="w-5 h-5" />
                 Relatórios
               </Button>
             </Link>
             <Link to={createPageUrl("AdminSubscriptions")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
+              <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-50 flex-col gap-2">
                 <CreditCard className="w-5 h-5" />
                 Assinaturas
               </Button>

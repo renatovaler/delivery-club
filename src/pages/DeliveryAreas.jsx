@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
 import { DeliveryArea } from "@/api/entities";
 import { Team } from "@/api/entities";
-import { Plan } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,7 +48,6 @@ import {
   Filter,
   Eye,
   EyeOff,
-  AlertTriangle,
   Loader2
 } from "lucide-react";
 import { BRAZILIAN_STATES, DEFAULT_MESSAGES, formatCurrency } from "@/components/lib";
@@ -58,7 +55,6 @@ import { BRAZILIAN_STATES, DEFAULT_MESSAGES, formatCurrency } from "@/components
 export default function DeliveryAreas() {
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
-  const [currentPlan, setCurrentPlan] = useState(null);
   const [areas, setAreas] = useState([]);
   const [filteredAreas, setFilteredAreas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,8 +66,7 @@ export default function DeliveryAreas() {
 
   const [filters, setFilters] = useState({
     search: "",
-    status: "all",
-    state: "all"
+    status: "all"
   });
 
   const [formData, setFormData] = useState({
@@ -98,44 +93,30 @@ export default function DeliveryAreas() {
       const userData = await User.me();
       setUser(userData);
 
-      // VALIDAÇÃO DE PERMISSÃO CORRIGIDA
       if (userData.user_type !== 'business_owner') {
         toast({
           title: "Acesso negado",
           description: "Você não tem permissão para acessar esta página.",
           variant: "destructive"
         });
-        setIsLoading(false); // Ensure loading state is reset
+        setIsLoading(false);
         return;
       }
 
       if (userData.current_team_id) {
         const teamData = await Team.get(userData.current_team_id);
         
-        // VALIDAÇÃO: Verificar se o usuário é realmente o dono desta empresa
         if (teamData.owner_id !== userData.id) {
           toast({
             title: "Acesso negado",
             description: "Você não tem permissão para acessar os dados desta empresa.",
             variant: "destructive"
           });
-          setIsLoading(false); // Ensure loading state is reset
+          setIsLoading(false);
           return;
         }
         
         setTeam(teamData);
-
-        if (teamData.plan_id) {
-          try {
-            const planData = await Plan.get(teamData.plan_id);
-            setCurrentPlan(planData);
-          } catch (error) {
-            console.error("Erro ao carregar plano:", error);
-            setCurrentPlan(null); 
-          }
-        } else {
-            setCurrentPlan(null);
-        }
 
         const teamAreas = await DeliveryArea.filter({
           team_id: userData.current_team_id
@@ -161,17 +142,12 @@ export default function DeliveryAreas() {
       filtered = filtered.filter(area => 
         area.city?.toLowerCase().includes(filters.search.toLowerCase()) ||
         area.neighborhood?.toLowerCase().includes(filters.search.toLowerCase()) ||
-        area.state?.toLowerCase().includes(filters.search.toLowerCase()) ||
         area.condominium?.toLowerCase().includes(filters.search.toLowerCase())
       );
     }
 
     if (filters.status !== "all") {
       filtered = filtered.filter(area => area.status === filters.status);
-    }
-
-    if (filters.state !== "all") {
-      filtered = filtered.filter(area => area.state === filters.state);
     }
 
     setFilteredAreas(filtered);
@@ -182,28 +158,35 @@ export default function DeliveryAreas() {
   };
 
   const resetForm = () => {
-    setFormData({
-      state: "",
-      city: "",
-      neighborhood: "",
-      condominium: "",
-      status: "active",
-      notes: "",
-      delivery_fee: ""
-    });
+    if (team?.address) {
+      setFormData({
+        state: team.address.state || "",
+        city: team.address.city || "",
+        neighborhood: "",
+        condominium: "",
+        status: "active",
+        notes: "",
+        delivery_fee: ""
+      });
+    } else {
+      setFormData({
+        state: "",
+        city: "",
+        neighborhood: "",
+        condominium: "",
+        status: "active",
+        notes: "",
+        delivery_fee: ""
+      });
+    }
     setEditingArea(null);
   };
 
-  const canAddNewArea = () => {
-    if (!currentPlan) return true; 
-    return areas.length < currentPlan.max_delivery_areas;
-  };
-
   const handleOpenModal = (area = null) => {
-    if (!area && !canAddNewArea()) {
+    if (!team?.address?.state || !team?.address?.city) {
       toast({
-        title: "Limite atingido",
-        description: `Seu plano permite apenas ${currentPlan?.max_delivery_areas || 0} áreas de entrega. Atualize seu plano para adicionar mais áreas.`,
+        title: "Configuração incompleta",
+        description: "Complete o endereço da sede da sua empresa em Configurações antes de adicionar áreas de entrega.",
         variant: "destructive",
       });
       return;
@@ -239,10 +222,10 @@ export default function DeliveryAreas() {
   };
 
   const handleSave = async () => {
-    if (!formData.state || !formData.city || !formData.neighborhood) {
+    if (!formData.neighborhood) {
       toast({
         title: "Dados incompletos",
-        description: "Preencha pelo menos Estado, Cidade e Bairro.",
+        description: "Preencha o campo Bairro.",
         variant: "destructive",
       });
       return;
@@ -261,8 +244,8 @@ export default function DeliveryAreas() {
     try {
       const areaData = {
         team_id: user.current_team_id,
-        state: formData.state,
-        city: formData.city,
+        state: team.address.state,
+        city: team.address.city,
         neighborhood: formData.neighborhood,
         condominium: formData.condominium || null,
         status: formData.status,
@@ -273,13 +256,13 @@ export default function DeliveryAreas() {
       if (editingArea) {
         await DeliveryArea.update(editingArea.id, areaData);
         toast({
-          title: DEFAULT_MESSAGES.SUCCESS_UPDATE + " ✅",
+          title: "Área atualizada com sucesso! ✅",
           description: "A área de entrega foi atualizada com sucesso.",
         });
       } else {
         await DeliveryArea.create(areaData);
         toast({
-          title: DEFAULT_MESSAGES.SUCCESS_SAVE + " ✅",
+          title: "Área criada com sucesso! ✅",
           description: "A área de entrega foi criada com sucesso.",
         });
       }
@@ -333,72 +316,54 @@ export default function DeliveryAreas() {
     return areas.filter(area => area.status === "active").length;
   };
 
-  const getUniqueStates = () => {
-    return new Set(areas.map(area => area.state)).size;
+  const getUniqueNeighborhoods = () => {
+    return new Set(areas.map(area => area.neighborhood)).size;
   };
 
-  const getUniqueCities = () => {
-    return new Set(areas.map(area => `${area.city}-${area.state}`)).size;
+  const getStateName = (stateCode) => {
+    const state = BRAZILIAN_STATES.find(s => s.value === stateCode);
+    return state ? state.label : stateCode;
   };
 
   if (isLoading) {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-amber-200 rounded-xl"></div>
+              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
             ))}
           </div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">Áreas de Cobertura</h1>
-          <p className="text-amber-600">Gerencie as áreas onde sua padaria faz entregas</p>
-          {currentPlan && (
-            <p className="text-sm text-amber-500 mt-1">
-              Plano {currentPlan.name}: {areas.length}/{currentPlan.max_delivery_areas} áreas utilizadas
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Áreas de Cobertura</h1>
+          <p className="text-slate-600">Gerencie as áreas onde sua empresa faz entregas</p>
+          {team?.address && (
+            <p className="text-sm text-slate-500 mt-1">
+              Limitado a {getStateName(team.address.state)} - {team.address.city}
             </p>
           )}
         </div>
         <Button 
           onClick={() => handleOpenModal()}
-          disabled={!canAddNewArea()}
-          className={`${canAddNewArea() ? 'bg-amber-600 hover:bg-amber-700' : 'bg-gray-400 cursor-not-allowed'}`}
+          className="bg-slate-800 hover:bg-slate-900 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nova Área
-          {!canAddNewArea() && " (Limite atingido)"}
         </Button>
       </div>
 
-      {currentPlan && areas.length >= currentPlan.max_delivery_areas && (
-        <Card className="border-amber-300 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <div>
-                <p className="font-medium text-amber-900">Limite de áreas atingido</p>
-                <p className="text-sm text-amber-700">
-                  Você está usando {areas.length} de {currentPlan.max_delivery_areas} áreas permitidas pelo seu plano {currentPlan.name}.
-                  Para adicionar mais áreas, considere fazer upgrade do seu plano.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-green-100">
               Áreas Ativas
@@ -413,52 +378,52 @@ export default function DeliveryAreas() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-100">
-              Estados Atendidos
+              Cidade Atendida
             </CardTitle>
             <MapPin className="h-4 w-4 text-blue-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getUniqueStates()}</div>
+            <div className="text-lg font-bold">{team?.address?.city || "Não definido"}</div>
             <p className="text-xs text-blue-200 mt-1">
-              diferentes estados
+              {getStateName(team?.address?.state) || "Estado não definido"}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-purple-100">
-              Cidades Atendidas
+              Bairros Atendidos
             </CardTitle>
             <MapPin className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getUniqueCities()}</div>
+            <div className="text-2xl font-bold">{getUniqueNeighborhoods()}</div>
             <p className="text-xs text-purple-200 mt-1">
-              diferentes cidades
+              diferentes bairros
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
+          <CardTitle className="flex items-center gap-2 text-slate-900">
             <Filter className="w-5 h-5" />
             Filtros
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Buscar</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Estado, cidade, bairro ou condomínio"
+                  placeholder="Bairro ou condomínio"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   className="pl-10"
@@ -479,30 +444,13 @@ export default function DeliveryAreas() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Estado</Label>
-              <Select value={filters.state} onValueChange={(value) => handleFilterChange('state', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os estados</SelectItem>
-                  {BRAZILIAN_STATES.map(state => (
-                    <SelectItem key={state.value} value={state.value}>
-                      {state.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
+          <CardTitle className="flex items-center gap-2 text-slate-900">
             <MapPin className="w-5 h-5" />
             Áreas de Entrega ({filteredAreas.length})
           </CardTitle>
@@ -510,11 +458,11 @@ export default function DeliveryAreas() {
         <CardContent>
           {filteredAreas.length === 0 ? (
             <div className="text-center py-12">
-              <MapPin className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-amber-900 mb-2">
+              <MapPin className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
                 {areas.length === 0 ? "Nenhuma área cadastrada" : "Nenhuma área encontrada"}
               </h3>
-              <p className="text-amber-600 mb-6">
+              <p className="text-slate-600 mb-6">
                 {areas.length === 0 
                   ? "Comece cadastrando sua primeira área de entrega"
                   : "Tente ajustar os filtros para ver mais resultados"
@@ -523,8 +471,7 @@ export default function DeliveryAreas() {
               {areas.length === 0 && (
                 <Button 
                   onClick={() => handleOpenModal()}
-                  className="bg-amber-600 hover:bg-amber-700"
-                  disabled={!canAddNewArea()}
+                  className="bg-slate-800 hover:bg-slate-900 text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Cadastrar Primeira Área
@@ -535,7 +482,7 @@ export default function DeliveryAreas() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-amber-50">
+                  <TableRow className="bg-slate-50">
                     <TableHead>Estado</TableHead>
                     <TableHead>Cidade</TableHead>
                     <TableHead>Bairro</TableHead>
@@ -546,7 +493,7 @@ export default function DeliveryAreas() {
                 </TableHeader>
                 <TableBody>
                   {filteredAreas.map((area) => (
-                      <TableRow key={area.id} className="hover:bg-amber-25">
+                      <TableRow key={area.id} className="hover:bg-slate-50">
                         <TableCell className="font-medium">{area.state}</TableCell>
                         <TableCell>{area.city}</TableCell>
                         <TableCell>{area.condominium ? `${area.neighborhood} (${area.condominium})` : area.neighborhood}</TableCell>
@@ -569,7 +516,7 @@ export default function DeliveryAreas() {
                               <DropdownMenuItem 
                                 onClick={() => handleToggleStatus(area)}
                                 disabled={isProcessing}
-                                className={area.status === "active" ? "text-amber-600" : "text-green-600"}
+                                className={area.status === "active" ? "text-slate-600" : "text-green-600"}
                               >
                                 {isProcessing ? (
                                   <>
@@ -607,35 +554,28 @@ export default function DeliveryAreas() {
               {editingArea ? "Editar Área de Entrega" : "Nova Área de Entrega"}
             </DialogTitle>
             <DialogDescription>
-              Configure uma nova área onde sua padaria fará entregas
+              Configure uma nova área onde sua empresa fará entregas em {team?.address?.city}, {getStateName(team?.address?.state)}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="state">Estado *</Label>
-              <Select value={formData.state} onValueChange={(value) => handleInputChange('state', value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BRAZILIAN_STATES.map(state => (
-                    <SelectItem key={state.value} value={state.value}>
-                      {state.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="state">Estado</Label>
+              <Input
+                id="state"
+                value={getStateName(team?.address?.state) || ""}
+                readOnly
+                className="bg-gray-50"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="city">Cidade *</Label>
+              <Label htmlFor="city">Cidade</Label>
               <Input
                 id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                placeholder="Nome da cidade"
-                required
+                value={team?.address?.city || ""}
+                readOnly
+                className="bg-gray-50"
               />
             </div>
 
@@ -672,7 +612,7 @@ export default function DeliveryAreas() {
                 min="0"
                 required
               />
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-slate-600">
                 Valor cobrado por cada entrega nesta área.
               </p>
             </div>
@@ -709,7 +649,7 @@ export default function DeliveryAreas() {
             <Button 
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-amber-600 hover:bg-amber-700 relative"
+              className="bg-slate-800 hover:bg-slate-900 text-white relative"
             >
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isSaving ? 'Salvando...' : editingArea ? 'Atualizar' : 'Criar Área'}

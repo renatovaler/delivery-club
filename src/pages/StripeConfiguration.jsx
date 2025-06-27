@@ -1,26 +1,32 @@
+
 import React, { useState, useEffect } from 'react';
 import { User } from '@/api/entities';
 import { Team } from '@/api/entities';
 import { useToast } from '@/components/ui/use-toast';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Save, Key, AlertTriangle, ExternalLink, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Key, AlertTriangle, ExternalLink, CheckCircle, Loader2, XCircle, ShieldCheck } from 'lucide-react';
 import { validateStripeKeys } from '@/api/functions';
 
 export default function StripeConfiguration() {
-  const { toast } = useToast();
+  const toast = useToast().toast;
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+
+  // New state variables for keys and validation/saving process
+  const [publicKey, setPublicKey] = useState('');
+  const [secretKey, setSecretKey] = useState('');
+  // Removed: webhookSecret
   const [isValidating, setIsValidating] = useState(false);
-  const [keys, setKeys] = useState({ public_key: '', secret_key: '' });
-  const [validationResult, setValidationResult] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [validationStatus, setValidationStatus] = useState('not_tested');
 
   useEffect(() => {
     loadStripeConfiguration();
@@ -56,18 +62,15 @@ export default function StripeConfiguration() {
         }
         
         setTeam(teamData);
-        setKeys({
-          public_key: teamData.stripe_public_key || '',
-          secret_key: teamData.stripe_secret_key || ''
-        });
+        setPublicKey(teamData.stripe_public_key || '');
+        setSecretKey(teamData.stripe_secret_key || '');
+        // Removed: setWebhookSecret
 
-        // Se já tem chaves configuradas, mostrar como validadas
+        // If keys are configured, set validation status to valid
         if (teamData.stripe_public_key && teamData.stripe_secret_key) {
-          setValidationResult({ 
-            valid: true, 
-            account_id: 'Configurado',
-            environment: teamData.stripe_public_key.includes('_test_') ? 'test' : 'live'
-          });
+          setValidationStatus('valid');
+        } else {
+          setValidationStatus('not_tested');
         }
       }
     } catch (error) {
@@ -83,51 +86,107 @@ export default function StripeConfiguration() {
   };
 
   const handleValidateKeys = async () => {
-    if (!keys.public_key.trim() || !keys.secret_key.trim()) {
+    if (!publicKey.trim() || !secretKey.trim()) {
       toast({
-        title: "Chaves obrigatórias",
-        description: "Preencha ambas as chaves antes de validar.",
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha a chave pública e secreta do Stripe para validar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar se as chaves têm o tamanho esperado
+    // Stripe publishable keys are usually 'pk_test_...' or 'pk_live_...', generally 24-25 chars.
+    // Secret keys are 'sk_test_...' or 'sk_live_...', can be 50-60+ chars.
+    // Setting a minimum length like 20 for initial check.
+    if (publicKey.trim().length < 20 || secretKey.trim().length < 20) {
+      toast({
+        title: "Chaves incompletas",
+        description: "Verifique se você copiou as chaves completas do Stripe.",
         variant: "destructive"
       });
       return;
     }
 
     setIsValidating(true);
-    setValidationResult(null);
+    setValidationStatus('not_tested');
 
     try {
-      const { data, error } = await validateStripeKeys({
-        public_key: keys.public_key.trim(),
-        secret_key: keys.secret_key.trim()
+      console.log('[StripeConfiguration] Chamando função de validação...');
+      console.log('[StripeConfiguration] Tamanhos das chaves:', {
+        public_key_length: publicKey.trim().length,
+        secret_key_length: secretKey.trim().length
+      });
+      
+      const result = await validateStripeKeys({
+        public_key: publicKey.trim(),
+        secret_key: secretKey.trim()
       });
 
-      if (error) {
-        setValidationResult({ valid: false, error: error.error || 'Erro na validação' });
+      console.log('[StripeConfiguration] Resultado recebido:', result);
+
+      // Tratar o resultado de forma mais robusta
+      if (result && result.data) {
+        if (result.data.valid === true) {
+          setValidationStatus('valid');
+          toast({
+            title: "✅ Chaves validadas!",
+            description: "As chaves do Stripe foram validadas com sucesso."
+          });
+        } else {
+          setValidationStatus('invalid');
+          const errorMsg = result.data.error || "As chaves fornecidas não são válidas.";
+          toast({
+            title: "❌ Chaves inválidas",
+            description: errorMsg,
+            variant: "destructive"
+          });
+        }
+      } else if (result && result.error) {
+        setValidationStatus('invalid');
         toast({
-          title: "Chaves inválidas",
-          description: error.error || 'Erro na validação das chaves',
+          title: "❌ Erro na validação",
+          description: result.error,
           variant: "destructive"
         });
-      } else if (data && data.valid) {
-        setValidationResult(data);
-        toast({
-          title: "Chaves válidas! ✅",
-          description: `Conta: ${data.account_email || data.account_id} (${data.environment})`
-        });
       } else {
-        setValidationResult({ valid: false, error: 'Resposta inválida do servidor' });
+        console.error('[StripeConfiguration] Resultado inesperado:', result);
+        setValidationStatus('invalid');
         toast({
-          title: "Erro na validação",
-          description: "Resposta inválida do servidor",
+          title: "Erro inesperado",
+          description: "Resposta inválida do servidor. Tente novamente.",
           variant: "destructive"
         });
       }
+
     } catch (error) {
-      console.error("Erro ao validar chaves:", error);
-      setValidationResult({ valid: false, error: 'Erro de conexão' });
+      console.error("[StripeConfiguration] Erro ao validar chaves:", error);
+      
+      let errorMessage = "Erro interno ao validar as chaves. Tente novamente.";
+      
+      // Tratar erros específicos do Stripe
+      if (error.message && typeof error.message === 'string') {
+        if (error.message.includes('400')) {
+          if (error.message.includes('Invalid API Key') || error.message.includes('invalid_api_key')) {
+            errorMessage = "Chave secreta inválida. Verifique se você copiou a chave completa do dashboard do Stripe.";
+          } else if (error.message.includes('No such') || error.message.includes('No such customer')) {
+            errorMessage = "Chave não encontrada ou erro de permissão. Verifique se você está usando as chaves corretas e se possui as permissões necessárias.";
+          } else {
+            errorMessage = "Erro de validação: Verifique se as chaves estão corretas e completas.";
+          }
+        } else if (error.message.includes('401')) {
+          errorMessage = "Não autorizado: Chave de API inválida ou sem permissão.";
+        } else if (error.message.includes('403')) {
+          errorMessage = "Acesso proibido: Verifique as permissões da sua chave de API.";
+        } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+          errorMessage = "Erro de rede. Verifique sua conexão ou tente novamente mais tarde.";
+        }
+      }
+      
+      setValidationStatus('invalid');
       toast({
-        title: "Erro de conexão",
-        description: "Não foi possível validar as chaves. Tente novamente.",
+        title: "Erro na validação",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -135,11 +194,20 @@ export default function StripeConfiguration() {
     }
   };
 
-  const handleSave = async () => {
-    if (!validationResult || !validationResult.valid) {
+  const handleSaveKeys = async () => {
+    if (!publicKey.trim() || !secretKey.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha a chave pública e secreta do Stripe para salvar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (validationStatus !== 'valid') {
       toast({
         title: "Validação necessária",
-        description: "Valide as chaves antes de salvar.",
+        description: "Por favor, valide as chaves do Stripe antes de salvá-las.",
         variant: "destructive"
       });
       return;
@@ -147,25 +215,23 @@ export default function StripeConfiguration() {
 
     setIsSaving(true);
     try {
-      await Team.update(team.id, {
-        stripe_public_key: keys.public_key.trim(),
-        stripe_secret_key: keys.secret_key.trim()
+      await Team.update(user.current_team_id, {
+        stripe_public_key: publicKey.trim(),
+        stripe_secret_key: secretKey.trim(),
+        // Removed: stripe_webhook_secret
       });
-      
-      toast({ 
-        title: "Configurações salvas! 🎉", 
-        description: "Sua empresa agora está pronta para receber pagamentos dos clientes." 
+
+      toast({
+        title: "✅ Configuração salva!",
+        description: "As chaves do Stripe foram salvas com sucesso."
       });
-      
-      // Recarregar dados da equipe
       await loadStripeConfiguration();
-      
     } catch (error) {
       console.error("Erro ao salvar chaves:", error);
-      toast({ 
-        title: "Erro ao salvar", 
-        description: "Não foi possível salvar as chaves. Tente novamente.", 
-        variant: 'destructive' 
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as chaves do Stripe. Tente novamente.",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -173,141 +239,157 @@ export default function StripeConfiguration() {
   };
 
   if (isLoading) {
-    return <div className="p-8"><div className="animate-pulse h-8 bg-amber-200 rounded w-1/3"></div></div>;
-  }
-
-  const hasValidKeys = validationResult && validationResult.valid;
-  const keysChanged = keys.public_key !== (team?.stripe_public_key || '') || 
-                     keys.secret_key !== (team?.stripe_secret_key || '');
-
-  return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center gap-4">
-        <Link to={createPageUrl("BusinessSettings")}>
-          <Button variant="outline" size="icon"><ArrowLeft className="w-4 h-4" /></Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-amber-900">Configuração do Stripe</h1>
-          <p className="text-amber-600">Conecte sua conta Stripe para receber pagamentos dos seus clientes.</p>
+    return (
+      <div className="p-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
+    );
+  }
 
-      <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
-        <AlertTriangle className="h-4 w-4 !text-red-500" />
-        <AlertTitle>Aviso de Segurança Importante</AlertTitle>
-        <AlertDescription>
-          Sua chave secreta do Stripe é uma informação extremamente sensível. Nunca a compartilhe publicamente. 
-          As chaves serão validadas antes de serem salvas para garantir que funcionem corretamente.
-        </AlertDescription>
-      </Alert>
+  return (
+    <div className="w-full p-6 md:p-8 space-y-8 max-w-4xl mx-auto">
+      <Link to={createPageUrl("BusinessSettings")}>
+        <Button variant="outline" size="icon" className="mb-4"><ArrowLeft className="w-4 h-4" /></Button>
+      </Link>
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Configuração do Stripe</h1>
+        <p className="text-slate-600">
+          Insira suas chaves de API do Stripe para processar pagamentos.
+        </p>
+      </div>
 
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle>Suas Chaves de API do Stripe</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <Key className="w-5 h-5" />
+            Chaves de API
+          </CardTitle>
           <CardDescription>
-            Você pode encontrar suas chaves no{' '}
-            <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="text-amber-600 hover:underline font-medium">
-              Dashboard do Stripe <ExternalLink className="inline-block w-3 h-3" />
-            </a>. Use as chaves do modo de produção para pagamentos reais.
+            Suas chaves não são armazenadas em texto plano e são usadas exclusivamente para a comunicação segura com o Stripe.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="public_key" className="flex items-center gap-2">
-              <Key className="w-4 h-4" /> Chave Publicável (Publishable Key)
-            </Label>
+            <Label htmlFor="publicKey">Chave Pública (Publishable Key)</Label>
             <Input
-              id="public_key"
-              value={keys.public_key}
-              onChange={(e) => {
-                setKeys(prev => ({ ...prev, public_key: e.target.value }));
-                setValidationResult(null); // Reset validation when keys change
-              }}
+              id="publicKey"
+              type="text" // changed type to text for easier input
               placeholder="pk_live_... ou pk_test_..."
-            />
-            <p className="text-xs text-gray-500">Esta chave é segura para ser usada no frontend do seu aplicativo.</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="secret_key" className="flex items-center gap-2">
-              <Key className="w-4 h-4" /> Chave Secreta (Secret Key)
-            </Label>
-            <Input
-              id="secret_key"
-              type="password"
-              value={keys.secret_key}
+              value={publicKey}
               onChange={(e) => {
-                setKeys(prev => ({ ...prev, secret_key: e.target.value }));
-                setValidationResult(null); // Reset validation when keys change
+                setPublicKey(e.target.value);
+                setValidationStatus('not_tested'); // Reset validation status on change
               }}
-              placeholder="sk_live_... ou sk_test_..."
+              className="font-mono text-sm"
             />
-            <p className="text-xs text-gray-500">Esta chave deve ser mantida em segredo e nunca exposta publicamente.</p>
+            <p className="text-xs text-slate-500">
+              Exemplo: pk_test_...
+            </p>
           </div>
-
-          {/* Status da validação */}
-          {validationResult && (
-            <Alert className={validationResult.valid ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}>
-              {validationResult.valid ? (
-                <CheckCircle className="h-4 w-4 !text-green-500" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 !text-red-500" />
-              )}
-              <AlertTitle>
-                {validationResult.valid ? "Chaves Válidas ✅" : "Chaves Inválidas ❌"}
-              </AlertTitle>
-              <AlertDescription>
-                {validationResult.valid ? (
-                  <div>
-                    <p>Suas chaves foram validadas com sucesso!</p>
-                    {validationResult.account_email && (
-                      <p className="text-sm mt-1">Conta: {validationResult.account_email}</p>
-                    )}
-                    <p className="text-sm">Ambiente: {validationResult.environment === 'test' ? 'Teste' : 'Produção'}</p>
-                  </div>
-                ) : (
-                  validationResult.error
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex justify-between items-center pt-4">
-            <Button 
-              onClick={handleValidateKeys} 
-              disabled={isValidating || !keys.public_key.trim() || !keys.secret_key.trim()}
+          <div className="space-y-2">
+            <Label htmlFor="secretKey">Chave Secreta (Secret Key)</Label>
+            <Input
+              id="secretKey"
+              type="text" // changed type to text from password for easier visibility of truncated keys
+              placeholder="sk_live_... ou sk_test_..."
+              value={secretKey}
+              onChange={(e) => {
+                setSecretKey(e.target.value);
+                setValidationStatus('not_tested'); // Reset validation status on change
+              }}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-slate-500">
+              Exemplo: sk_test_...
+            </p>
+            <p className="text-xs text-red-500">
+              ⚠️ Certifique-se de copiar a chave completa (geralmente mais de 50 caracteres)
+            </p>
+          </div>
+          {/* Removed: campo do webhook secret */}
+        </CardContent>
+        <CardFooter className="flex justify-between items-center">
+          <div>
+            {validationStatus === "valid" && (
+              <Badge className="bg-green-100 text-green-800 border-green-300">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Chaves Válidas
+              </Badge>
+            )}
+            {validationStatus === "invalid" && (
+              <Badge className="bg-red-100 text-red-800 border-red-300">
+                <XCircle className="w-4 h-4 mr-2" />
+                Chaves Inválidas
+              </Badge>
+            )}
+             {validationStatus === "not_tested" && (
+              <Badge variant="outline">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Chaves não testadas
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleValidateKeys}
+              disabled={isSaving || isValidating || !publicKey.trim() || !secretKey.trim()}
               variant="outline"
+              className="border-slate-300 text-slate-700 hover:bg-slate-50"
             >
               {isValidating ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Validando...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Validar Chaves
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Validar
                 </>
               )}
             </Button>
-            
             <Button 
-              onClick={handleSave} 
-              disabled={isSaving || !hasValidKeys || !keysChanged}
+              onClick={handleSaveKeys} 
+              disabled={isSaving || isValidating || !publicKey.trim() || !secretKey.trim() || validationStatus !== 'valid'} 
+              className="bg-slate-800 hover:bg-slate-900 text-white"
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Salvando...
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className="mr-2 h-4 w-4" />
                   Salvar Chaves
                 </>
               )}
             </Button>
           </div>
+        </CardFooter>
+      </Card>
+      
+      <Card className="shadow-lg border-0">
+        <CardHeader>
+            <CardTitle className="text-xl font-semibold">Instruções</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <CardDescription className="text-slate-600">
+                <p className="mb-2">Para configurar o Stripe:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                    <li>Crie ou acesse sua conta no <a href="https://dashboard.stripe.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Dashboard do Stripe <ExternalLink className="inline-block w-3 h-3" /></a>.</li>
+                    <li>Vá em 'Desenvolvedores' &gt; 'Chaves de API' para encontrar suas Chaves Publicável e Secreta.</li>
+                    <li>Copie e cole as chaves nos campos acima.</li>
+                    <li>Clique em "Validar" para testar suas chaves.</li>
+                    <li>Clique em "Salvar Chaves" para finalizar a configuração.</li>
+                </ol>
+                <p className="mt-4 text-sm text-slate-500">
+                    <strong>Nota:</strong> Os webhooks são gerenciados automaticamente pela plataforma, não é necessário configurá-los manualmente.
+                </p>
+            </CardDescription>
         </CardContent>
       </Card>
     </div>

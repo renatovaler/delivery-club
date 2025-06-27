@@ -603,13 +603,13 @@ export default function FinancialManagement() {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-48 bg-amber-200 rounded-xl"></div>
+              <div key={i} className="h-48 bg-slate-200 rounded-xl"></div>
             ))}
           </div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
@@ -628,8 +628,8 @@ export default function FinancialManagement() {
   return (
     <div className="p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">Painel Financeiro Completo</h1>
-        <p className="text-amber-600">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Painel Financeiro Completo</h1>
+        <p className="text-slate-600">
           Análise detalhada da performance financeira da sua empresa com insights de receitas, custos e lucratividade.
         </p>
       </div>
@@ -667,12 +667,12 @@ export default function FinancialManagement() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={exportFinancialReport} variant="outline">
+          <Button onClick={exportFinancialReport} variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
             <Download className="w-4 h-4 mr-2" />
             Exportar Relatório
           </Button>
           <Dialog open={showAddExpense} onOpenChange={(isOpen) => { setShowAddExpense(isOpen); if (!isOpen) setEditingExpense(null); }}>
-            <Button onClick={() => setShowAddExpense(true)} className="bg-amber-600 hover:bg-amber-700">
+            <Button onClick={() => setShowAddExpense(true)} className="bg-slate-800 hover:bg-slate-900 text-white">
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Despesa
             </Button>
@@ -724,7 +724,7 @@ export default function FinancialManagement() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => {setShowAddExpense(false); setExpenseData({ description: '', amount: '', category: '', date: format(new Date(), 'yyyy-MM-dd') });}}>Cancelar</Button>
-                <Button onClick={handleSaveExpense} className="bg-amber-600 hover:bg-amber-700" disabled={isSubmitting}>
+                <Button onClick={handleSaveExpense} className="bg-slate-800 hover:bg-slate-900 text-white" disabled={isSubmitting}>
                   {isSubmitting ? "Salvando..." : "Salvar"}
                 </Button>
               </DialogFooter>
@@ -735,59 +735,59 @@ export default function FinancialManagement() {
 
       {/* Cards de Resumo Executivo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="shadow-lg border-green-200">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-green-500 to-green-600 text-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-900">
+            <CardTitle className="flex items-center gap-2 text-green-100">
               <TrendingUp className="w-5 h-5" />
               Receita Total
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-green-700">{formatCurrency(revenueAnalysis.totalRevenue)}</p>
-            <p className="text-sm text-gray-500 mt-2">{revenueAnalysis.subscriptionMetrics.totalSubscriptions} assinaturas ativas</p>
+            <p className="text-3xl font-bold">{formatCurrency(revenueAnalysis.totalRevenue)}</p>
+            <p className="text-sm text-green-200 mt-2">{revenueAnalysis.subscriptionMetrics.totalSubscriptions} assinaturas ativas</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-red-200">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-red-500 to-red-600 text-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-900">
+            <CardTitle className="flex items-center gap-2 text-red-100">
               <TrendingDown className="w-5 h-5" />
               Custos Totais
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-red-700">{formatCurrency(costAnalysis.totalCosts)}</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Produtos + Despesas + Assinatura da Plataforma
+            <p className="text-3xl font-bold">{formatCurrency(costAnalysis.totalCosts)}</p>
+            <p className="text-sm text-red-200 mt-2">
+              Produtos + Despesas + Assinatura
             </p>
           </CardContent>
         </Card>
 
-        <Card className={`shadow-lg ${profitabilityAnalysis.netProfit >= 0 ? 'border-blue-200' : 'border-orange-200'}`}>
+        <Card className={`shadow-lg border-0 ${profitabilityAnalysis.netProfit >= 0 ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-orange-500 to-orange-600'} text-white`}>
           <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${profitabilityAnalysis.netProfit >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
+            <CardTitle className={`flex items-center gap-2 ${profitabilityAnalysis.netProfit >= 0 ? 'text-blue-100' : 'text-orange-100'}`}>
               <DollarSign className="w-5 h-5" />
               Lucro Líquido
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-3xl font-bold ${profitabilityAnalysis.netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+            <p className="text-3xl font-bold">
               {formatCurrency(profitabilityAnalysis.netProfit)}
             </p>
-            <p className="text-sm text-gray-500 mt-2">Margem Líquida: {profitabilityAnalysis.netMargin.toFixed(1)}%</p>
+            <p className="text-sm mt-2">Margem Líquida: {profitabilityAnalysis.netMargin.toFixed(1)}%</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-purple-200">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-purple-900">
+            <CardTitle className="flex items-center gap-2 text-purple-100">
               <PieChart className="w-5 h-5" />
               Lucro Bruto
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-purple-700">{formatCurrency(profitabilityAnalysis.grossProfit)}</p>
-            <p className="text-sm text-gray-500 mt-2">Margem Bruta: {profitabilityAnalysis.grossMargin.toFixed(1)}%</p>
+            <p className="text-3xl font-bold">{formatCurrency(profitabilityAnalysis.grossProfit)}</p>
+            <p className="text-sm text-purple-200 mt-2">Margem Bruta: {profitabilityAnalysis.grossMargin.toFixed(1)}%</p>
           </CardContent>
         </Card>
       </div>
@@ -816,7 +816,7 @@ export default function FinancialManagement() {
         <TabsContent value="revenue" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Métricas de Assinatura */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -836,7 +836,7 @@ export default function FinancialManagement() {
             </Card>
 
             {/* Top Produtos por Receita */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
@@ -868,7 +868,7 @@ export default function FinancialManagement() {
           </div>
 
           {/* Top Clientes */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
@@ -914,7 +914,7 @@ export default function FinancialManagement() {
         <TabsContent value="costs" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Breakdown de Custos */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calculator className="w-5 h-5" />
@@ -941,7 +941,7 @@ export default function FinancialManagement() {
                   </div>
                   <Progress value={(costAnalysis.platformCosts / costAnalysis.totalCosts) * 100} className="h-2" />
                   
-                  <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-md mt-2">
+                  <div className="flex items-start gap-2 text-xs text-blue-700 bg-blue-50 p-2 rounded-md mt-2">
                       <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
                       <span>O custo da assinatura no período atual é calculado proporcionalmente aos dias restantes, com base na data de início do seu plano.</span>
                   </div>
@@ -955,7 +955,7 @@ export default function FinancialManagement() {
             </Card>
 
             {/* Custos Operacionais por Categoria */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle>Despesas por Categoria</CardTitle>
               </CardHeader>
@@ -982,7 +982,7 @@ export default function FinancialManagement() {
           </div>
 
           {/* Histórico de Assinaturas da Plataforma */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5" />
@@ -1039,7 +1039,7 @@ export default function FinancialManagement() {
           </Card>
 
           {/* Métricas de Eficiência */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-5 h-5" />
@@ -1049,11 +1049,11 @@ export default function FinancialManagement() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-amber-600">{formatCurrency(costAnalysis.totalCosts / revenueAnalysis.subscriptionMetrics.totalSubscriptions || 0)}</p>
+                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(costAnalysis.totalCosts / revenueAnalysis.subscriptionMetrics.totalSubscriptions || 0)}</p>
                   <p className="text-sm text-gray-600">Custo por Cliente</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600">
+                  <p className="text-2xl font-bold text-red-600">
                     {((costAnalysis.totalCosts / revenueAnalysis.totalRevenue) * 100).toFixed(1)}%
                   </p>
                   <p className="text-sm text-gray-600">Custos sobre Receita</p>
@@ -1072,7 +1072,7 @@ export default function FinancialManagement() {
         <TabsContent value="profitability" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Análise de Margens */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="w-5 h-5" />
@@ -1114,7 +1114,7 @@ export default function FinancialManagement() {
             </Card>
 
             {/* Métricas por Cliente */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -1146,7 +1146,7 @@ export default function FinancialManagement() {
           </div>
 
           {/* Simulação de Target */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-5 h-5" />
@@ -1183,7 +1183,7 @@ export default function FinancialManagement() {
 
         <TabsContent value="expenses" className="space-y-6">
           {/* Tabela de Despesas Detalhada */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />

@@ -284,12 +284,12 @@ export default function CustomerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="p-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-amber-200 rounded-xl"></div>
+              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -298,19 +298,19 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">
           Olá, {user?.full_name}! 👋
         </h1>
-        <p className="text-amber-600">
+        <p className="text-slate-600">
           Bem-vindo ao seu painel de controle de assinaturas
         </p>
       </div>
 
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-100">
               Assinaturas Ativas
@@ -325,7 +325,7 @@ export default function CustomerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-green-100">
               Gasto Semanal
@@ -340,16 +340,16 @@ export default function CustomerDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-amber-100">
+            <CardTitle className="text-sm font-medium text-purple-100">
               Total de Itens
             </CardTitle>
-            <Package className="h-4 w-4 text-amber-200" />
+            <Package className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalSubscribedItems}</div>
-            <p className="text-xs text-amber-200 mt-1">
+            <p className="text-xs text-purple-200 mt-1">
               Itens em suas assinaturas ativas
             </p>
           </CardContent>
@@ -358,9 +358,9 @@ export default function CustomerDashboard() {
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Próximas entregas */}
-        <Card className="shadow-lg border-amber-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <Calendar className="w-5 h-5" />
               Próximas Entregas
             </CardTitle>
@@ -373,20 +373,20 @@ export default function CustomerDashboard() {
                     key={index}
                     className={`p-4 rounded-lg border ${
                       isSameSaoPauloDay(delivery.date, new Date())
-                        ? 'bg-amber-100 border-amber-300'
-                        : 'bg-amber-50 border-amber-200'
+                        ? 'bg-slate-100 border-slate-300'
+                        : 'bg-slate-50 border-slate-200'
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="font-medium text-amber-900">
+                        <p className="font-medium text-slate-900">
                            {formatInSaoPaulo(delivery.date, { weekday: 'long', day: 'numeric', month: 'long' })}
                         </p>
-                        <p className="text-sm text-amber-600 font-semibold">
+                        <p className="text-sm text-slate-600 font-semibold">
                           {delivery.totalQuantity} produtos
                         </p>
                         <div className="mt-2">
-                          <p className="text-xs text-amber-500 flex items-center gap-1">
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {delivery.address}
                           </p>
@@ -398,7 +398,7 @@ export default function CustomerDashboard() {
                         </div>
                       </div>
                       {isSameSaoPauloDay(delivery.date, new Date()) && (
-                        <Badge className="bg-amber-500 hover:bg-amber-600 ml-3">
+                        <Badge className="bg-blue-500 hover:bg-blue-600 ml-3">
                           Hoje
                         </Badge>
                       )}
@@ -408,10 +408,10 @@ export default function CustomerDashboard() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <AlertCircle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-                <p className="text-amber-600">Nenhuma entrega programada</p>
+                <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <p className="text-slate-600">Nenhuma entrega programada</p>
                 <Link to={createPageUrl("NewSubscription")}>
-                  <Button className="mt-4 bg-amber-600 hover:bg-amber-700">
+                  <Button className="mt-4 bg-slate-800 hover:bg-slate-900 text-white">
                     <Plus className="w-4 h-4 mr-2" />
                     Criar Assinatura
                   </Button>
@@ -422,9 +422,9 @@ export default function CustomerDashboard() {
         </Card>
 
         {/* Minhas assinaturas */}
-        <Card className="shadow-lg border-amber-200">
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <ShoppingCart className="w-5 h-5" />
               Minhas Assinaturas
             </CardTitle>
@@ -433,18 +433,18 @@ export default function CustomerDashboard() {
             {subscriptions.length > 0 ? (
               <div className="space-y-4">
                 {subscriptions.slice(0, 3).map((subscription) => (
-                  <div key={subscription.id} className="p-4 bg-amber-50 rounded-lg">
+                  <div key={subscription.id} className="p-4 bg-slate-50 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-amber-900">
+                        <p className="font-medium text-slate-900">
                           {subscriptionSummaries[subscription.id]?.totalQuantity || 0} itens por entrega
                         </p>
-                        <p className="text-sm text-amber-600">
+                        <p className="text-sm text-slate-600">
                           {subscriptionSummaries[subscription.id]?.itemCount || 0} produtos diferentes
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-amber-900">
+                        <p className="font-bold text-slate-900">
                           {formatCurrency(parseFloat(subscription.weekly_price) || 0)}
                         </p>
                         <Badge variant="outline" className="border-green-500 text-green-700">
@@ -456,17 +456,17 @@ export default function CustomerDashboard() {
                 ))}
                 
                 <Link to={createPageUrl("MySubscriptions")}>
-                  <Button variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50">
+                  <Button variant="outline" className="w-full border-slate-300 text-slate-700 hover:bg-slate-50">
                     Ver Todas as Assinaturas
                   </Button>
                 </Link>
               </div>
             ) : (
               <div className="text-center py-8">
-                <ShoppingCart className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-                <p className="text-amber-600 mb-4">Você ainda não tem assinaturas</p>
+                <ShoppingCart className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <p className="text-slate-600 mb-4">Você ainda não tem assinaturas</p>
                 <Link to={createPageUrl("NewSubscription")}>
-                  <Button className="bg-amber-600 hover:bg-amber-700">
+                  <Button className="bg-slate-800 hover:bg-slate-900 text-white">
                     <Plus className="w-4 h-4 mr-2" />
                     Criar Primeira Assinatura
                   </Button>
@@ -478,26 +478,26 @@ export default function CustomerDashboard() {
       </div>
 
       {/* Ações rápidas */}
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="text-amber-900">Ações Rápidas</CardTitle>
+          <CardTitle className="text-slate-900">Ações Rápidas</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link to={createPageUrl("NewSubscription")}>
-              <Button className="w-full h-16 bg-amber-600 hover:bg-amber-700 flex-col gap-2">
+              <Button className="w-full h-16 bg-slate-800 hover:bg-slate-900 text-white flex-col gap-2">
                 <Plus className="w-5 h-5" />
                 Nova Assinatura
               </Button>
             </Link>
             <Link to={createPageUrl("MySubscriptions")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
+              <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-50 flex-col gap-2">
                 <CreditCard className="w-5 h-5" />
                 Gerenciar Assinaturas
               </Button>
             </Link>
             <Link to={createPageUrl("FinancialHistory")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
+              <Button variant="outline" className="w-full h-16 border-slate-300 text-slate-700 hover:bg-slate-50 flex-col gap-2">
                 <TrendingUp className="w-5 h-5" />
                 Histórico Financeiro
               </Button>

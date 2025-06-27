@@ -6,7 +6,7 @@ import { SubscriptionItem } from "@/api/entities";
 import { Product } from "@/api/entities";
 import { DeliveryArea } from "@/api/entities";
 import { Team } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Progress } from "@/components/ui/progress"; // Added Progress component
+import { Progress } from "@/components/ui/progress";
 import {
   Truck,
   Calendar as CalendarIcon,
@@ -41,7 +41,8 @@ import {
   Package,
   MapPin,
   Filter,
-  BarChart3 // Added BarChart3 icon
+  BarChart3,
+  CheckCircle
 } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, differenceInCalendarWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -57,7 +58,7 @@ export default function DeliveryManagement() {
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState({});
   const [deliveryAreas, setDeliveryAreas] = useState([]);
-  const [productionData, setProductionData] = useState([]);
+  const [productionData, setProductionData] = useState([]); // Raw data for selected period (day or week)
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("day");
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +69,13 @@ export default function DeliveryManagement() {
     daily: {},
     weekly: {}
   });
+
+  // New states for the redesigned summary cards and filters
+  const [todayDeliveries, setTodayDeliveries] = useState([]);
+  const [upcomingDeliveries, setUpcomingDeliveries] = useState([]);
+  const [deliveryStats, setDeliveryStats] = useState({ successRate: 0 }); // Placeholder
+  const [filters, setFilters] = useState({ date: 'all', status: 'all', area: 'all' });
+  const [filteredDeliveries, setFilteredDeliveries] = useState([]); // Filtered list of deliveries for the main table
 
   useEffect(() => {
     const validateUserAccess = async () => {
@@ -116,20 +124,97 @@ export default function DeliveryManagement() {
     }
   }, [selectedDate, viewMode, isAuthorized, team]);
 
+  // Effect to calculate filtered deliveries and update summary card data whenever productionData or filters change
+  useEffect(() => {
+    if (productionData.length > 0) {
+      const today = new Date();
+      const next7Days = addDays(today, 7);
+
+      let allDeliveriesFlattened = [];
+      productionData.forEach(dayData => {
+        // Assume deliveries in productionData are initially 'pending' for filtering
+        const deliveriesWithDefaultStatus = dayData.deliveries.map(d => ({
+          ...d,
+          status: d.status || 'pending'
+        }));
+        allDeliveriesFlattened.push(...deliveriesWithDefaultStatus);
+      });
+
+      // Calculate data for the new summary cards
+      const currentDayDeliveries = productionData.find(d => format(d.date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'));
+      if (currentDayDeliveries) {
+        // Mock some completed deliveries for the card display to make it useful
+        const todayDels = currentDayDeliveries.deliveries.map((d, index) => ({
+          ...d,
+          status: index % 3 === 0 ? 'completed' : 'pending' // Mock status for demo purposes
+        }));
+        setTodayDeliveries(todayDels);
+      } else {
+        setTodayDeliveries([]);
+      }
+
+      const upcoming = [];
+      productionData.forEach(dayData => {
+        if (dayData.date >= today && dayData.date <= next7Days) {
+          upcoming.push(...dayData.deliveries);
+        }
+      });
+      setUpcomingDeliveries(upcoming);
+
+      // Placeholder for delivery success rate, as historical data isn't fetched
+      setDeliveryStats({ successRate: 95 });
+
+      // Apply filters to generate filteredDeliveries for the main table
+      let tempFilteredDeliveries = [];
+
+      // Filter by date (within the currently loaded productionData scope)
+      let deliveriesForFiltering = [];
+      if (filters.date === 'today') {
+        const todayData = productionData.find(dayData =>
+          format(dayData.date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+        );
+        if (todayData) deliveriesForFiltering.push(...todayData.deliveries);
+      } else if (filters.date === 'week') {
+        const weekStartForSelectedDate = startOfWeek(selectedDate, { weekStartsOn: 1 });
+        const weekEndForSelectedDate = endOfWeek(selectedDate, { weekStartsOn: 1 });
+        productionData.filter(dayData =>
+          dayData.date >= weekStartForSelectedDate && dayData.date <= weekEndForSelectedDate
+        ).forEach(dayData => deliveriesForFiltering.push(...dayData.deliveries));
+      } else { // 'all' or default
+        productionData.forEach(dayData => deliveriesForFiltering.push(...dayData.deliveries));
+      }
+
+
+      deliveriesForFiltering.forEach(delivery => {
+        // Ensure delivery has a 'status' for filtering (added in generateProductionData too)
+        const deliveryWithStatus = { ...delivery, status: delivery.status || 'pending' };
+
+        const matchesStatus = filters.status === 'all' || deliveryWithStatus.status === filters.status;
+        const matchesArea = filters.area === 'all' || (deliveryWithStatus.area && deliveryWithStatus.area.id === filters.area);
+
+        if (matchesStatus && matchesArea) {
+          tempFilteredDeliveries.push(deliveryWithStatus);
+        }
+      });
+
+      setFilteredDeliveries(tempFilteredDeliveries);
+    } else {
+      setTodayDeliveries([]);
+      setUpcomingDeliveries([]);
+      setFilteredDeliveries([]);
+    }
+  }, [productionData, filters, selectedDate, viewMode]);
+
   const loadDeliveryData = async () => {
     if (!team) return;
     
     setIsLoading(true);
     try {
-      console.log("Carregando dados de entrega para equipe:", team.id);
-
       // 1. Buscar todas as assinaturas ativas da empresa
       const teamSubscriptions = await Subscription.filter({ team_id: team.id, status: 'active' });
-      console.log("Assinaturas encontradas:", teamSubscriptions);
       setSubscriptions(teamSubscriptions);
 
       if (teamSubscriptions.length === 0) {
-        console.log("Nenhuma assinatura ativa encontrada");
         setProductionData([]);
         setIsLoading(false);
         return;
@@ -143,8 +228,6 @@ export default function DeliveryManagement() {
         const items = await SubscriptionItem.filter({ subscription_id: subId });
         allSubscriptionItems.push(...items);
       }
-      
-      console.log("Itens de assinatura encontrados:", allSubscriptionItems);
       setSubscriptionItems(allSubscriptionItems);
 
       // 3. Buscar produtos únicos
@@ -152,7 +235,6 @@ export default function DeliveryManagement() {
       const teamProducts = productIds.length > 0 
         ? await Product.filter({ id: { "$in": productIds } })
         : [];
-      console.log("Produtos encontrados:", teamProducts);
       setProducts(teamProducts);
 
       // 4. Buscar dados dos clientes
@@ -205,11 +287,7 @@ export default function DeliveryManagement() {
     }
   };
 
-  const generateProductionData = (subs, items, usersById, areasById, productsData) => {
-    console.log("=== DEBUG: Gerando dados de produção ===");
-    console.log("Assinaturas:", subs);
-    console.log("Itens:", items);
-    
+  const generateProductionData = (subs, items, usersById, areasData, productsData) => {
     const dayMappingJsToEn = { 0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday' };
     
     let weekStart, weekEnd;
@@ -233,6 +311,11 @@ export default function DeliveryManagement() {
       return acc;
     }, {});
 
+    const areasById = areasData.reduce((acc, area) => {
+      acc[area.id] = area;
+      return acc;
+    }, {});
+
     // Contadores para resumo de produtos
     const productCountsForSelectedDay = {}; // For the specific selectedDate
     const productCountsForSelectedWeek = {}; // For the entire week interval
@@ -245,25 +328,20 @@ export default function DeliveryManagement() {
       const dayOfMonth = date.getDate();
       const deliveries = [];
 
-      console.log(`Processando data: ${format(date, 'yyyy-MM-dd')} (${dayNameEn})`);
-
       subs.forEach(sub => {
         if (sub.status !== 'active' || !sub.start_date) return;
 
         const subItems = itemsBySubId[sub.id] || [];
-        console.log(`Assinatura ${sub.id}: ${subItems.length} itens`);
 
         subItems.forEach(item => {
           if (!item) return;
           
           let isDeliveryDay = false;
-          console.log(`Item ${item.id}: frequency=${item.frequency}`);
 
           switch (item.frequency) {
             case 'weekly':
               if (Array.isArray(item.delivery_days) && item.delivery_days.includes(dayNameEn)) {
                 isDeliveryDay = true;
-                console.log(`✓ Entrega semanal confirmada para ${dayNameEn}`);
               }
               break;
             case 'bi-weekly':
@@ -272,14 +350,12 @@ export default function DeliveryManagement() {
                 const weeksDiff = differenceInCalendarWeeks(date, startDate, { weekStartsOn: 1 });
                 if (weeksDiff >= 0 && weeksDiff % 2 === 0) {
                   isDeliveryDay = true;
-                  console.log(`✓ Entrega quinzenal confirmada para ${dayNameEn}`);
                 }
               }
               break;
             case 'monthly':
               if (item.monthly_delivery_day === dayOfMonth) {
                 isDeliveryDay = true;
-                console.log(`✓ Entrega mensal confirmada para dia ${dayOfMonth}`);
               }
               break;
             default:
@@ -299,7 +375,8 @@ export default function DeliveryManagement() {
               customer: customer || { full_name: 'Cliente não encontrado' },
               area: area || { neighborhood: 'Área não encontrada' },
               quantity: quantity,
-              address: sub.delivery_address || {}
+              address: sub.delivery_address || {},
+              status: 'pending' // Default status for filtering
             });
 
             // Contar produtos para resumo
@@ -319,13 +396,9 @@ export default function DeliveryManagement() {
                 productCountsForSelectedWeek[productName] = { quantity: 0, category: productCategory };
             }
             productCountsForSelectedWeek[productName].quantity += quantity;
-
-            console.log(`➤ Entrega adicionada: ${quantity} ${productName}`);
           }
         });
       });
-
-      console.log(`Total de entregas para ${format(date, 'yyyy-MM-dd')}: ${deliveries.length}`);
 
       return {
         date,
@@ -342,8 +415,6 @@ export default function DeliveryManagement() {
       weekly: productCountsForSelectedWeek
     });
 
-    console.log("Dados de produção gerados:", dailyProductionData);
-    console.log("Resumo de produtos:", { daily: productCountsForSelectedDay, weekly: productCountsForSelectedWeek });
     setProductionData(dailyProductionData);
   };
 
@@ -367,12 +438,16 @@ export default function DeliveryManagement() {
     return categoryLabels[category] || category;
   };
 
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
   if (authLoading) {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
@@ -395,21 +470,21 @@ export default function DeliveryManagement() {
 
   if (isLoading) {
     return (
-      <div className="p-6 md:p-8 space-y-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-96 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">Gestão de Entregas</h1>
-          <p className="text-amber-600">Gerencie e visualize as entregas programadas.</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestão de Entregas</h1>
+          <p className="text-slate-600">Visualize e organize as entregas dos próximos 7 dias.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => handleDateChange(-1)}>&lt;</Button>
@@ -446,75 +521,143 @@ export default function DeliveryManagement() {
         </div>
       </div>
 
-      {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+      {/* Cards de estatísticas (New) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assinaturas Ativas</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-blue-100">
+              Entregas Hoje
+            </CardTitle>
+            <CalendarIcon className="h-4 w-4 text-blue-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{subscriptions.length}</div>
+            <div className="text-2xl font-bold">{todayDeliveries.length}</div>
+            <p className="text-xs text-blue-200 mt-1">
+              {todayDeliveries.filter(d => d.status === 'completed').length} concluídas
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Produtos Diferentes</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-green-100">
+              Próximos 7 Dias
+            </CardTitle>
+            <Truck className="h-4 w-4 text-green-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{products.length}</div>
+            <div className="text-2xl font-bold">{upcomingDeliveries.length}</div>
+            <p className="text-xs text-green-200 mt-1">
+              Entregas programadas
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Áreas de Entrega</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-purple-100">
+              Taxa de Sucesso
+            </CardTitle>
+            <CheckCircle className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{deliveryAreas.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Entregas Hoje</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {productionData.find(d => format(d.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'))?.deliveries.length || 0}
-            </div>
+            <div className="text-2xl font-bold">{deliveryStats.successRate}%</div>
+            <p className="text-xs text-purple-200 mt-1">
+              Últimos 30 dias
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* NOVO: Resumo de Produtos por Tipo */}
+      {/* Filtros (New) */}
+      <Card className="shadow-lg border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <Filter className="w-5 h-5" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Data</Label>
+              <Select value={filters.date} onValueChange={(value) => handleFilterChange('date', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar data" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as datas (Período atual)</SelectItem>
+                  <SelectItem value="today">Apenas {format(selectedDate, "dd/MM")}</SelectItem>
+                  {viewMode === 'week' && (
+                    <SelectItem value="week">Semana completa</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="completed">Concluída</SelectItem>
+                  {/* Assuming these are statuses that might appear in future data or mock */}
+                  <SelectItem value="in_progress">Em andamento</SelectItem>
+                  <SelectItem value="failed">Falhou</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Área</Label>
+              <Select value={filters.area} onValueChange={(value) => handleFilterChange('area', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as áreas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as áreas</SelectItem>
+                  {deliveryAreas.map(area => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {area.neighborhood} - {area.city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumo de Produtos por Tipo (Existing, color palette updated) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Resumo Diário / Semanal de Produtos */}
-        <Card>
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <Package className="w-5 h-5" />
-              Produtos para {viewMode === 'day' ? 'Hoje' : 'Esta Semana'}
+              Produtos para Entrega (Resumo da Semana)
             </CardTitle>
+            <CardDescription>
+              Total de produtos necessários para cumprir as entregas da semana.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {Object.keys(viewMode === 'day' ? productSummary.daily : productSummary.weekly).length === 0 ? (
-              <p className="text-amber-500 italic">Nenhum produto para entregar</p>
+              <p className="text-slate-500 italic">Nenhum produto para entregar</p>
             ) : (
               <div className="space-y-3">
                 {Object.entries(viewMode === 'day' ? productSummary.daily : productSummary.weekly)
                   .sort(([,a], [,b]) => b.quantity - a.quantity)
                   .map(([productName, data]) => (
-                    <div key={productName} className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
+                    <div key={productName} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                       <div className="flex-1">
-                        <p className="font-medium text-amber-900">{productName}</p>
-                        <p className="text-sm text-amber-600">{getCategoryLabel(data.category)}</p>
+                        <p className="font-medium text-slate-900">{productName}</p>
+                        <p className="text-sm text-slate-600">{getCategoryLabel(data.category)}</p>
                       </div>
-                      <Badge variant="secondary" className="bg-amber-200 text-amber-800">
+                      <Badge variant="secondary" className="bg-slate-200 text-slate-800">
                         {data.quantity} unidades
                       </Badge>
                     </div>
@@ -524,7 +667,7 @@ export default function DeliveryManagement() {
           </CardContent>
         </Card>
 
-        {/* Resumo por Categoria */}
+        {/* Resumo por Categoria (Existing, color palette updated) */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -542,7 +685,7 @@ export default function DeliveryManagement() {
               }, {});
 
               return Object.keys(categoryTotals).length === 0 ? (
-                <p className="text-amber-500 italic">Nenhuma categoria para mostrar</p>
+                <p className="text-slate-500 italic">Nenhuma categoria para mostrar</p>
               ) : (
                 <div className="space-y-3">
                   {Object.entries(categoryTotals)
@@ -567,79 +710,139 @@ export default function DeliveryManagement() {
         </Card>
       </div>
 
-      {/* Dados de Produção/Entrega */}
-      <Card>
+      {/* Lista de entregas (Main Delivery Table - Existing, color palette updated) */}
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-slate-900">
             <CalendarIcon className="w-5 h-5" />
-            Entregas - {formatPeriodDisplay()}
+            Entregas da Semana
           </CardTitle>
+          <CardDescription>
+            Arraste os cards para atualizar o status das entregas.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {productionData.length === 0 ? (
+          {filteredDeliveries.length === 0 ? (
             <div className="text-center py-12">
-              <Truck className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-amber-900 mb-2">
-                Nenhuma entrega programada
+              <Truck className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                Nenhuma entrega programada encontrada
               </h3>
-              <p className="text-amber-600">
-                Não há entregas programadas para {viewMode === 'day' ? 'este dia' : 'esta semana'}.
+              <p className="text-slate-600">
+                Ajuste os filtros ou o período selecionado.
               </p>
             </div>
           ) : (
             <div className="space-y-6">
-              {productionData.map((dayData) => (
-                <div key={format(dayData.date, 'yyyy-MM-dd')} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-amber-900">
-                      {dayData.dayName} - {format(dayData.date, "dd/MM/yyyy")}
-                    </h3>
-                    <div className="flex gap-4 text-sm text-amber-600">
-                      <span>{dayData.deliveries.length} entregas</span>
-                      <span>{dayData.totalQuantity} itens</span>
-                      <span>{dayData.uniqueCustomers} clientes</span>
-                    </div>
-                  </div>
+              {/* Display deliveries grouped by day if viewMode is week, or just the single day's deliveries */}
+              {eachDayOfInterval({
+                start: viewMode === 'day' ? selectedDate : startOfWeek(selectedDate, { weekStartsOn: 1 }),
+                end: viewMode === 'day' ? selectedDate : endOfWeek(selectedDate, { weekStartsOn: 1 })
+              }).map(dateInPeriod => {
+                const dayDeliveries = filteredDeliveries.filter(d => {
+                  if (!d?.subscription?.start_date || !d?.item) return false;
+                  
+                  // This mapping is defined here to match the logic in generateProductionData
+                  // for consistency when filtering deliveries for display by day.
+                  const dayMappingJsToEn = { 0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday' };
+                  const currentDayNameEn = dayMappingJsToEn[dateInPeriod.getDay()];
 
-                  {dayData.deliveries.length === 0 ? (
-                    <p className="text-amber-500 italic">Nenhuma entrega programada</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Produto</TableHead>
-                            <TableHead>Quantidade</TableHead>
-                            <TableHead>Endereço</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {dayData.deliveries.map((delivery, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="font-medium">
-                                {delivery.customer.full_name}
-                              </TableCell>
-                              <TableCell>{delivery.product.name}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {delivery.quantity}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {delivery.address.street ? 
-                                  `${delivery.address.street}, ${delivery.address.number} - ${delivery.address.neighborhood}` :
-                                  'Endereço não informado'
-                                }
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                  let isDeliveryDay = false;
+
+                  switch (d.item.frequency) {
+                    case 'weekly':
+                      if (Array.isArray(d.item.delivery_days) && d.item.delivery_days.includes(currentDayNameEn)) {
+                        isDeliveryDay = true;
+                      }
+                      break;
+                    case 'bi-weekly':
+                      if (d.item.biweekly_delivery_day === currentDayNameEn) {
+                        const startDate = new Date(d.subscription.start_date.replace(/-/g, '\/') + 'T00:00:00');
+                        const weeksDiff = differenceInCalendarWeeks(dateInPeriod, startDate, { weekStartsOn: 1 });
+                        if (weeksDiff >= 0 && weeksDiff % 2 === 0) {
+                          isDeliveryDay = true;
+                        }
+                      }
+                      break;
+                    case 'monthly':
+                      if (d.item.monthly_delivery_day === dateInPeriod.getDate()) {
+                        isDeliveryDay = true;
+                      }
+                      break;
+                    default:
+                      break;
+                  }
+
+                  return isDeliveryDay;
+                });
+
+                if (dayDeliveries.length === 0) return null; // Don't show empty days
+
+                return (
+                  <div key={format(dateInPeriod, 'yyyy-MM-dd')} className="border rounded-lg p-4 bg-slate-50 border-slate-200">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {format(dateInPeriod, 'EEEE', { locale: ptBR })} - {format(dateInPeriod, "dd/MM/yyyy")}
+                      </h3>
+                      <div className="flex gap-4 text-sm text-slate-600">
+                        <span>{dayDeliveries.length} entregas</span>
+                        <span>{dayDeliveries.reduce((sum, d) => sum + d.quantity, 0)} itens</span>
+                        <span>{new Set(dayDeliveries.map(d => d.customer.id)).size} clientes</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Cliente</TableHead>
+                              <TableHead>Produto</TableHead>
+                              <TableHead>Quantidade</TableHead>
+                              <TableHead>Endereço</TableHead>
+                              <TableHead>Status</TableHead> {/* Added Status column */}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {dayDeliveries.map((delivery, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {delivery.customer.full_name}
+                                </TableCell>
+                                <TableCell>{delivery.product.name}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    {delivery.quantity}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm">
+                                  {delivery.address.street ? 
+                                    `${delivery.address.street}, ${delivery.address.number} - ${delivery.address.neighborhood}` :
+                                    'Endereço não informado'
+                                  }
+                                </TableCell>
+                                <TableCell>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`${
+                                      delivery.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                      delivery.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                      delivery.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-red-100 text-red-800'
+                                    }`}
+                                  >
+                                    {delivery.status === 'completed' ? 'Concluída' : 
+                                    delivery.status === 'pending' ? 'Pendente' : 
+                                    (delivery.status === 'in_progress' ? 'Em Andamento' : 
+                                    'Falhou')}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { Team, User, Plan, Subscription, Product } from "@/api/entities";
+import { Team, User, Plan, Subscription, Product } from "@/api/entities/index";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -205,63 +206,63 @@ export default function AdminSubscriptions() {
 
   if (isLoading && teams.length === 0) {
     return (
-      <div className="p-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 bg-amber-200 rounded-xl"></div>
+              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
             ))}
           </div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">Assinaturas da Plataforma</h1>
-        <p className="text-amber-600">Gerencie os planos e assinaturas das empresas que utilizam a plataforma.</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Assinaturas da Plataforma</h1>
+        <p className="text-slate-600">Gerencie os planos e assinaturas das empresas que utilizam a plataforma.</p>
       </div>
 
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Mensal (MRR)</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-green-100">Receita Mensal (MRR)</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-200" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(planStats.totalRevenue)}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assinaturas Ativas</CardTitle>
-            <Play className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium text-blue-100">Assinaturas Ativas</CardTitle>
+            <Play className="h-4 w-4 text-blue-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{planStats.active}</div>
+            <div className="text-2xl font-bold">{planStats.active}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Empresas em Trial</CardTitle>
-            <Clock className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-orange-100">Empresas em Trial</CardTitle>
+            <Clock className="h-4 w-4 text-orange-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{planStats.trial}</div>
+            <div className="text-2xl font-bold">{planStats.trial}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Empresas</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-purple-100">Total de Empresas</CardTitle>
+            <Building2 className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{planStats.total}</div>
@@ -269,9 +270,9 @@ export default function AdminSubscriptions() {
         </Card>
       </div>
 
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
+          <CardTitle className="flex items-center gap-2 text-slate-900">
             <FileText className="w-5 h-5" />
             Todas as Assinaturas de Empresas ({filteredTeams.length})
           </CardTitle>
@@ -307,7 +308,7 @@ export default function AdminSubscriptions() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-amber-50">
+                <TableRow>
                   <TableHead>Empresa</TableHead>
                   <TableHead>Proprietário</TableHead>
                   <TableHead>Plano</TableHead>
@@ -324,7 +325,7 @@ export default function AdminSubscriptions() {
                     const plan = plans[team.plan_id];
                     
                     return (
-                      <TableRow key={team.id} className="hover:bg-amber-25">
+                      <TableRow key={team.id}>
                         <TableCell>
                           <div className="font-medium">{team.name || 'Empresa não encontrada'}</div>
                         </TableCell>

@@ -18,14 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,14 +28,7 @@ import { useToast } from "@/components/ui/use-toast";
 import {
   Users,
   Search,
-  Eye,
-  Mail,
-  Phone,
-  MapPin,
-  CreditCard,
-  Calendar,
-  DollarSign,
-  AlertTriangle
+  Filter // Added Filter icon
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -61,19 +46,12 @@ const formatCurrency = (value) => {
 };
 
 export default function Customers() {
-  const [user, setUser] = useState(null);
-  const [team, setTeam] = useState(null);
-  const [currentPlan, setCurrentPlan] = useState(null);
   const [customersData, setCustomersData] = useState([]);
-  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]); // Keep subscriptions state if needed for other calculations later
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customerSubscriptions, setCustomerSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    search: "",
-    status: "all"
-  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,14 +60,13 @@ export default function Customers() {
 
   useEffect(() => {
     applyFilters();
-  }, [customersData, filters]);
+  }, [customersData, searchTerm, statusFilter]);
 
   const loadCustomersData = async () => {
     setIsLoading(true);
     try {
       const userData = await User.me();
-      setUser(userData);
-
+      
       // VALIDAÇÃO DE PERMISSÃO CORRIGIDA
       if (userData.user_type !== 'business_owner') {
         toast({
@@ -97,6 +74,7 @@ export default function Customers() {
           description: "Você não tem permissão para acessar esta página.",
           variant: "destructive"
         });
+        setIsLoading(false);
         return;
       }
 
@@ -110,16 +88,10 @@ export default function Customers() {
             description: "Você não tem permissão para acessar os dados desta empresa.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
         
-        setTeam(teamData);
-
-        if (teamData.plan_id) {
-          const planData = await Plan.get(teamData.plan_id).catch(() => null); // Defensive catch for plan
-          setCurrentPlan(planData);
-        }
-
         const teamSubscriptions = await Subscription.filter({
           team_id: userData.current_team_id
         }, '-created_date');
@@ -137,27 +109,21 @@ export default function Customers() {
 
         for (const customerId of customerIds) {
           const customer = userMap[customerId]; // Get customer from the map
-          if (customer) { // Only process if customer data exists in the map
-            // CORREÇÃO: Calcular estatísticas do cliente com verificações de segurança
+          if (customer) { 
             const customerSubs = teamSubscriptions.filter(s => s.customer_id === customerId);
-            const activeSubscriptions = customerSubs.filter(s => s.status === 'active').length;
-            const totalWeeklyValue = customerSubs
-              .filter(s => s.status === 'active')
-              .reduce((sum, s) => sum + (parseFloat(s.weekly_price) || 0), 0);
             
-            // CORREÇÃO: Verificar se customerSubs tem elementos antes de usar sort
-            const firstSubscriptionDate = customerSubs.length > 0 
-              ? customerSubs
-                  .filter(s => s.start_date) // Filtrar apenas assinaturas com data de início válida
-                  .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))[0]?.start_date
-              : null;
-            
+            // Determine customer status based on their subscriptions
+            let customerOverallStatus = 'cancelled'; // Default if no active/paused
+            if (customerSubs.some(s => s.status === 'active')) {
+              customerOverallStatus = 'active';
+            } else if (customerSubs.some(s => s.status === 'paused')) {
+              customerOverallStatus = 'paused';
+            }
+
             loadedCustomersData.push({
               ...customer,
-              activeSubscriptions,
-              totalSubscriptions: customerSubs.length,
-              totalWeeklyValue,
-              firstSubscriptionDate
+              subscriptionCount: customerSubs.length,
+              status: customerOverallStatus // Added for filtering/display
             });
           }
         }
@@ -180,195 +146,106 @@ export default function Customers() {
     let filtered = [...customersData];
 
     // Filtro por busca
-    if (filters.search) {
+    if (searchTerm) {
       filtered = filtered.filter(customer => 
-        customer.full_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-        customer.email?.toLowerCase().includes(filters.search.toLowerCase())
+        customer.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filtro por status
-    if (filters.status !== "all") {
-      if (filters.status === "active") {
-        filtered = filtered.filter(customer => customer.activeSubscriptions > 0);
-      } else if (filters.status === "inactive") {
-        filtered = filtered.filter(customer => customer.activeSubscriptions === 0);
-      }
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(customer => customer.status === statusFilter);
     }
 
     setFilteredCustomers(filtered);
   };
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleViewCustomer = async (customer) => {
-    setSelectedCustomer(customer);
-    
-    // CORREÇÃO: Carregar assinaturas específicas do cliente com verificação de segurança
-    const customerSubs = Array.isArray(subscriptions) 
-      ? subscriptions.filter(s => s.customer_id === customer.id)
-      : [];
-    setCustomerSubscriptions(customerSubs);
-  };
-
-  const getStatusBadge = (activeSubscriptions) => {
-    if (activeSubscriptions > 0) {
-      return <Badge className="bg-green-500 hover:bg-green-600">Ativo</Badge>;
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500 hover:bg-green-600';
+      case 'paused':
+        return 'bg-yellow-500 hover:bg-yellow-600';
+      case 'cancelled':
+        return 'bg-gray-500 hover:bg-gray-600';
+      default:
+        return 'bg-secondary';
     }
-    return <Badge variant="secondary">Inativo</Badge>;
   };
 
-  const getTotalActiveCustomers = () => {
-    return Array.isArray(customersData) 
-      ? customersData.filter(c => c.activeSubscriptions > 0).length
-      : 0;
+  const translateStatus = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Ativa';
+      case 'paused':
+        return 'Pausada';
+      case 'cancelled':
+        return 'Cancelada';
+      default:
+        return 'Desconhecido';
+    }
   };
 
-  const getTotalRevenue = () => {
-    return Array.isArray(customersData)
-      ? customersData.reduce((sum, c) => sum + (c.totalWeeklyValue || 0), 0)
-      : 0;
-  };
-
-  const canAcceptNewSubscriptions = () => {
-    if (!currentPlan) return true;
-    const activeSubscriptionsCount = Array.isArray(subscriptions)
-      ? subscriptions.filter(sub => sub.status === 'active').length
-      : 0;
-    return activeSubscriptionsCount < currentPlan.max_subscriptions;
+  const handleViewDetails = (customerId) => {
+    // Placeholder for viewing customer details, e.g., navigating to a customer detail page
+    console.log("Viewing details for customer ID:", customerId);
+    toast({
+      title: "Funcionalidade Futura",
+      description: `Detalhes do cliente ${customerId} seriam exibidos aqui.`,
+    });
   };
 
   if (isLoading) {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-amber-200 rounded-xl"></div>
-            ))}
-          </div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">Gestão de Clientes</h1>
-        <p className="text-amber-600">Gerencie os clientes e suas assinaturas</p>
-        {currentPlan && (
-          <p className="text-sm text-amber-500 mt-1">
-            Plano {currentPlan.name}: {subscriptions.filter(sub => sub.status === 'active').length}/{currentPlan.max_subscriptions} assinaturas ativas
-          </p>
-        )}
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Clientes</h1>
+        <p className="text-slate-600">Gerencie todos os clientes com assinaturas ativas.</p>
       </div>
 
-      {/* Alerta de limite de assinaturas */}
-      {currentPlan && !canAcceptNewSubscriptions() && (
-        <Card className="border-amber-300 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <div>
-                <p className="font-medium text-amber-900">Limite de assinaturas atingido</p>
-                <p className="text-sm text-amber-700">
-                  Você está usando {Array.isArray(subscriptions) ? subscriptions.filter(sub => sub.status === 'active').length : 0} de {currentPlan.max_subscriptions} assinaturas permitidas pelo seu plano {currentPlan.name}.
-                  Para aceitar mais clientes, considere fazer upgrade do seu plano.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-100">
-              Total de Clientes
-            </CardTitle>
-            <Users className="h-4 w-4 text-blue-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{customersData.length}</div>
-            <p className="text-xs text-blue-200 mt-1">
-              {getTotalActiveCustomers()} ativos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-100">
-              Receita Semanal
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-green-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(getTotalRevenue())}</div>
-            <p className="text-xs text-green-200 mt-1">
-              receita semanal recorrente
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-100">
-              Assinaturas Ativas
-            </CardTitle>
-            <CreditCard className="h-4 w-4 text-purple-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {customersData.reduce((sum, c) => sum + c.activeSubscriptions, 0)}
-            </div>
-            <p className="text-xs text-purple-200 mt-1">
-              total de assinaturas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filtros */}
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
-            <Search className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <Filter className="w-5 h-5" />
             Filtros
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Buscar Cliente</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Nome ou e-mail do cliente"
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  placeholder="Nome ou Email"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+              <label className="text-sm font-medium">Status da Assinatura</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os clientes</SelectItem>
-                  <SelectItem value="active">Clientes ativos</SelectItem>
-                  <SelectItem value="inactive">Clientes inativos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Ativa</SelectItem>
+                  <SelectItem value="paused">Pausada</SelectItem>
+                  <SelectItem value="cancelled">Cancelada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -376,165 +253,56 @@ export default function Customers() {
         </CardContent>
       </Card>
 
-      {/* Tabela de clientes */}
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
+          <CardTitle className="flex items-center gap-2 text-slate-900">
             <Users className="w-5 h-5" />
-            Clientes ({filteredCustomers.length})
+            Lista de Clientes ({filteredCustomers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredCustomers.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-amber-900 mb-2">
-                Nenhum cliente encontrado
-              </h3>
-              <p className="text-amber-600">
-                {customersData.length === 0
-                  ? "Você ainda não possui clientes cadastrados"
-                  : "Tente ajustar os filtros para ver mais resultados"
-                }
-              </p>
-            </div>
-          ) : (
+          {filteredCustomers.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-amber-50">
+                  <TableRow className="bg-slate-50">
                     <TableHead>Cliente</TableHead>
                     <TableHead>Contato</TableHead>
                     <TableHead>Assinaturas</TableHead>
-                    <TableHead>Valor Semanal</TableHead>
-                    <TableHead>Cliente Desde</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id} className="hover:bg-amber-25">
+                    <TableRow key={customer.id} className="hover:bg-slate-50">
+                      <TableCell className="font-medium text-slate-900">{customer.full_name}</TableCell>
+                      <TableCell>{customer.email}</TableCell>
+                      <TableCell>{customer.subscriptionCount}</TableCell>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{customer.full_name}</div>
-                          <div className="text-sm text-gray-500">{customer.email}</div>
-                        </div>
+                        <Badge className={getStatusBadgeClass(customer.status)}>
+                          {translateStatus(customer.status)}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          {customer.email && (
-                            <div className="flex items-center gap-1 text-sm">
-                              <Mail className="w-3 h-3" />
-                              <span className="text-gray-600">{customer.email}</span>
-                            </div>
-                          )}
-                          {customer.phone && (
-                            <div className="flex items-center gap-1 text-sm">
-                              <Phone className="w-3 h-3" />
-                              <span className="text-gray-600">{customer.phone}</span>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{customer.activeSubscriptions} ativas</div>
-                          <div className="text-sm text-gray-500">{customer.totalSubscriptions} total</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-bold text-green-600">
-                        {formatCurrency(customer.totalWeeklyValue)}
-                      </TableCell>
-                      <TableCell>
-                        {customer.firstSubscriptionDate 
-                          ? format(new Date(customer.firstSubscriptionDate), "dd 'de' MMM 'de' yyyy", { locale: ptBR })
-                          : '-'
-                        }
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(customer.activeSubscriptions)}
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewCustomer(customer)}
-                              className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl">
-                            <DialogHeader>
-                              <DialogTitle>Detalhes do Cliente</DialogTitle>
-                              <DialogDescription>
-                                Informações completas e histórico de assinaturas
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            {selectedCustomer && (
-                              <div className="space-y-6">
-                                {/* Informações do cliente */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  <div>
-                                    <h4 className="font-medium mb-3">Informações Pessoais</h4>
-                                    <div className="space-y-2 text-sm">
-                                      <div><strong>Nome:</strong> {selectedCustomer.full_name}</div>
-                                      <div><strong>E-mail:</strong> {selectedCustomer.email}</div>
-                                      {selectedCustomer.phone && (
-                                        <div><strong>Telefone:</strong> {selectedCustomer.phone}</div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <h4 className="font-medium mb-3">Estatísticas</h4>
-                                    <div className="space-y-2 text-sm">
-                                      <div><strong>Assinaturas Ativas:</strong> {selectedCustomer.activeSubscriptions}</div>
-                                      <div><strong>Total de Assinaturas:</strong> {selectedCustomer.totalSubscriptions}</div>
-                                      <div><strong>Valor Semanal:</strong> {formatCurrency(selectedCustomer.totalWeeklyValue)}</div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Assinaturas do cliente */}
-                                <div>
-                                  <h4 className="font-medium mb-3">Assinaturas</h4>
-                                  {Array.isArray(customerSubscriptions) && customerSubscriptions.length > 0 ? (
-                                    <div className="space-y-3">
-                                      {customerSubscriptions.map((sub) => (
-                                        <div key={sub.id} className="p-4 border rounded-lg">
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="font-medium">
-                                              Assinatura #{sub.id.slice(-8)}
-                                            </div>
-                                            <Badge className={sub.status === 'active' ? 'bg-green-500' : sub.status === 'paused' ? 'bg-yellow-500' : 'bg-gray-500'}>
-                                              {sub.status === 'active' ? 'Ativa' : sub.status === 'paused' ? 'Pausada' : 'Cancelada'}
-                                            </Badge>
-                                          </div>
-                                          <div className="text-sm text-gray-600 space-y-1">
-                                            <div>Valor: {formatCurrency(sub.weekly_price || 0)}/semana</div>
-                                            <div>Início: {sub.start_date ? format(new Date(sub.start_date), "dd/MM/yyyy") : 'Data não informada'}</div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-gray-500">Nenhuma assinatura encontrada</p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                          onClick={() => handleViewDetails(customer.id)}
+                        >
+                          Ver Detalhes
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-slate-500">
+              <Users className="w-12 h-12 mx-auto mb-4" />
+              <p>Nenhum cliente encontrado.</p>
             </div>
           )}
         </CardContent>

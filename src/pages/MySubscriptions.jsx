@@ -4,6 +4,7 @@ import { User } from "@/api/entities";
 import { Subscription } from "@/api/entities";
 import { SubscriptionItem } from "@/api/entities";
 import { Product } from "@/api/entities";
+import { Service } from "@/api/entities"; // Added Service import
 import { Team } from "@/api/entities";
 import { TeamMember } from "@/api/entities"; // Added for notifying team members
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,7 +39,8 @@ import {
   Loader2,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  Wrench // Added Wrench icon
 } from "lucide-react";
 import { formatCurrency, translate, DAYS_OF_WEEK } from "@/components/lib";
 import { createNotification } from "@/components/lib"; // Added for notifications
@@ -100,34 +102,52 @@ export default function MySubscriptions() {
       const detailsMap = {};
 
       if (allItems.length > 0) {
-        // Step 3: Get all unique, valid product IDs
+        // Step 3: Get all unique, valid product and service IDs
         const productIds = [...new Set(allItems.map(item => item.product_id).filter(Boolean))];
+        const serviceIds = [...new Set(allItems.map(item => item.service_id).filter(Boolean))];
 
-        // Step 4: Fetch all products in a single batch using a more robust filter query
-        const productsData = productIds.length > 0 
-            ? await Product.filter({ id: { "$in": productIds } })
-            : [];
+        // Step 4: Fetch all products and services in parallel
+        const [productsData, servicesData] = await Promise.all([
+          productIds.length > 0 ? Product.filter({ id: { "$in": productIds } }) : [],
+          serviceIds.length > 0 ? Service.filter({ id: { "$in": serviceIds } }) : []
+        ]);
         
-        // Step 5: Create a map of products for efficient O(1) lookup
+        // Step 5: Create maps for efficient O(1) lookup
         const productsMap = productsData.reduce((acc, p) => {
           if (p) acc[p.id] = p;
           return acc;
         }, {});
+        
+        const servicesMap = servicesData.reduce((acc, s) => {
+          if (s) acc[s.id] = s;
+          return acc;
+        }, {});
 
-        // Step 6: Group items by subscription and attach full product details
+        // Step 6: Group items by subscription and attach full product/service details
         for (const item of allItems) {
             if (!detailsMap[item.subscription_id]) {
                 detailsMap[item.subscription_id] = [];
             }
             
-            const product = productsMap[item.product_id];
+            let itemData = null;
+            let itemType = 'unknown'; // Default type if neither product_id nor service_id is found
+            
+            if (item.product_id) {
+              itemData = productsMap[item.product_id];
+              itemType = 'product';
+            } else if (item.service_id) {
+              itemData = servicesMap[item.service_id];
+              itemType = 'service';
+            }
             
             const detailedItem = {
                 ...item,
-                product: product ? product : { // Use product from map if it exists
-                    id: item.product_id,
-                    name: 'Produto Indisponível',
-                    description: 'Este produto não pôde ser carregado ou não está mais disponível no catálogo.',
+                item_type: itemType, // Store the determined type (product, service, or unknown)
+                item_data: itemData ? itemData : { // Use the fetched data or a generic fallback
+                    id: item.product_id || item.service_id || 'unknown', // Use either ID or 'unknown'
+                    name: itemType === 'service' ? 'Serviço Indisponível' : 
+                          (itemType === 'product' ? 'Produto Indisponível' : 'Item Indisponível'),
+                    description: `Este ${itemType === 'service' ? 'serviço' : (itemType === 'product' ? 'produto' : 'item')} não pôde ser carregado ou não está mais disponível no catálogo.`,
                     price_per_unit: item.unit_price || 0,
                     status: 'inactive'
                 }
@@ -299,32 +319,37 @@ export default function MySubscriptions() {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">Minhas Assinaturas</h1>
-        <p className="text-amber-600">Gerencie suas assinaturas, pause, cancele ou altere detalhes.</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Minhas Assinaturas</h1>
+        <p className="text-slate-600">Gerencie suas assinaturas mensais, pause, cancele ou altere detalhes.</p>
       </div>
 
       <div className="space-y-6">
         {subscriptions.map(sub => (
-          <Card key={sub.id} className="shadow-lg border-amber-200">
+          <Card key={sub.id} className="shadow-lg border-0">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-xl text-amber-900">
+                  <CardTitle className="text-xl text-slate-900">
                     {teams[sub.team_id]?.name || 'Empresa não encontrada'}
                   </CardTitle>
                   <CardDescription className="mt-1">
                     Assinatura #{sub.id.slice(-8)} • Criada em {new Date(sub.created_date).toLocaleDateString('pt-BR')}
                   </CardDescription>
+                  {sub.next_billing_date && (
+                    <p className="text-sm text-blue-600 mt-1">
+                      Próxima cobrança: {new Date(sub.next_billing_date).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge 
@@ -381,38 +406,45 @@ export default function MySubscriptions() {
               {/* Resumo Financeiro */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-green-700 font-medium">Valor Semanal Total</span>
+                  <span className="text-green-700 font-medium">Valor Mensal Total</span>
                   <span className="text-2xl font-bold text-green-800">
-                    {formatCurrency(sub.weekly_price || 0)}
+                    {formatCurrency(sub.monthly_price || 0)}
                   </span>
                 </div>
               </div>
 
-              {/* Produtos da Assinatura */}
+              {/* Produtos/Serviços da Assinatura */}
               <div>
-                <h4 className="font-semibold text-lg mb-4 flex items-center gap-2 text-amber-800">
+                <h4 className="font-semibold text-lg mb-4 flex items-center gap-2 text-slate-800">
                   <Package className="w-5 h-5"/>
-                  Produtos Inclusos ({(subscriptionDetails[sub.id] || []).length})
+                  Itens Inclusos ({(subscriptionDetails[sub.id] || []).length})
                 </h4>
                 
                 {(subscriptionDetails[sub.id] || []).length > 0 ? (
                   <div className="space-y-3">
                     {subscriptionDetails[sub.id].map(item => {
-                      const product = item.product;
-                      const isUnavailable = !product || product.status === 'inactive';
+                      const itemData = item.item_data;
+                      const isUnavailable = !itemData || itemData.status === 'inactive';
+                      const isService = item.item_type === 'service';
                       
                       return (
                         <div key={item.id} className={`p-4 rounded-lg border transition-colors ${
-                          isUnavailable ? 'border-red-200 bg-red-50' : 'border-amber-100 bg-amber-50'
+                          isUnavailable ? 'border-red-200 bg-red-50' : 'border-slate-100 bg-slate-50'
                         }`}>
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
+                                {/* Icon based on item type */}
+                                {isService ? <Wrench className="w-4 h-4 text-blue-600" /> : <Package className="w-4 h-4 text-green-600" />}
                                 <h5 className={`font-bold text-base ${
-                                  isUnavailable ? 'text-red-700' : 'text-amber-900'
+                                  isUnavailable ? 'text-red-700' : 'text-slate-900'
                                 }`}>
-                                  {product?.name || 'Produto não identificado'}
+                                  {itemData?.name || 'Item não identificado'}
                                 </h5>
+                                {/* Badge for type */}
+                                <Badge variant="outline" className="text-xs">
+                                  {isService ? 'Serviço' : 'Produto'}
+                                </Badge>
                                 {isUnavailable && (
                                   <Badge variant="outline" className="text-red-600 border-red-300">
                                     Indisponível
@@ -422,26 +454,30 @@ export default function MySubscriptions() {
                               
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                                 <div>
-                                  <span className="font-medium text-amber-700">Quantidade:</span>
-                                  <p className="text-amber-800">
-                                    {item.quantity_per_delivery} {product?.unit_type === 'unidade' ? 'unidades' : product?.unit_type || 'unidades'}
+                                  <span className="font-medium text-slate-700">Quantidade:</span>
+                                  <p className="text-slate-800">
+                                    {item.quantity_per_delivery} {
+                                      isService 
+                                        ? 'sessões' 
+                                        : (itemData?.unit_type === 'unidade' ? 'unidades' : itemData?.unit_type || 'unidades')
+                                    }
                                   </p>
                                 </div>
                                 
                                 <div>
-                                  <span className="font-medium text-amber-700">Frequência:</span>
-                                  <p className="text-amber-800">{formatFrequencyForItem(item)}</p>
+                                  <span className="font-medium text-slate-700">Frequência:</span>
+                                  <p className="text-slate-800">{formatFrequencyForItem(item)}</p>
                                 </div>
                                 
                                 <div>
-                                  <span className="font-medium text-amber-700">Preço Unitário:</span>
-                                  <p className="text-amber-800">{formatCurrency(item.unit_price || 0)}</p>
+                                  <span className="font-medium text-slate-700">Preço Mensal:</span>
+                                  <p className="text-slate-800">{formatCurrency(item.monthly_subtotal || 0)}</p>
                                 </div>
                               </div>
                               
-                              {product?.description && (
-                                <p className="text-xs text-amber-600 mt-2 italic">
-                                  {product.description}
+                              {itemData?.description && (
+                                <p className="text-xs text-slate-600 mt-2 italic">
+                                  {itemData.description}
                                 </p>
                               )}
                             </div>
@@ -451,16 +487,16 @@ export default function MySubscriptions() {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-amber-600">
+                  <div className="text-center py-6 text-slate-600">
                     <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>Nenhum produto encontrado nesta assinatura</p>
+                    <p>Nenhum item encontrado nesta assinatura</p>
                   </div>
                 )}
               </div>
 
               {/* Endereço de Entrega */}
               <div>
-                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2 text-amber-800">
+                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-800">
                   <MapPin className="w-5 h-5"/>
                   Endereço de Entrega
                 </h4>
@@ -491,17 +527,17 @@ export default function MySubscriptions() {
         ))}
 
         {subscriptions.length === 0 && (
-          <Card>
+          <Card className="border-0">
             <CardContent className="text-center py-16">
-              <ShoppingCart className="w-16 h-16 text-amber-400 mx-auto mb-4"/>
-              <h3 className="text-xl font-semibold text-amber-900 mb-2">
+              <ShoppingCart className="w-16 h-16 text-slate-400 mx-auto mb-4"/>
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
                 Nenhuma assinatura encontrada
               </h3>
-              <p className="text-amber-600 mb-6">
+              <p className="text-slate-600 mb-6">
                 Parece que você ainda não tem nenhuma assinatura ativa.
               </p>
               <Link to={createPageUrl("NewSubscription")}>
-                <Button className="bg-amber-600 hover:bg-amber-700">
+                <Button className="bg-slate-800 hover:bg-slate-900 text-white">
                   <Plus className="w-4 h-4 mr-2"/>
                   Criar Primeira Assinatura
                 </Button>

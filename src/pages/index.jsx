@@ -56,6 +56,14 @@ import PriceHistory from "./PriceHistory";
 
 import PlatformInvoices from "./PlatformInvoices";
 
+import SelfHostGuideLaravel from "./SelfHostGuideLaravel";
+
+import SelfHostGuideNodeJS from "./SelfHostGuideNodeJS";
+
+import AdminSystemTests from "./AdminSystemTests";
+
+import ServiceManagement from "./ServiceManagement";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -115,6 +123,14 @@ const PAGES = {
     PriceHistory: PriceHistory,
     
     PlatformInvoices: PlatformInvoices,
+    
+    SelfHostGuideLaravel: SelfHostGuideLaravel,
+    
+    SelfHostGuideNodeJS: SelfHostGuideNodeJS,
+    
+    AdminSystemTests: AdminSystemTests,
+    
+    ServiceManagement: ServiceManagement,
     
 }
 
@@ -198,6 +214,14 @@ function PagesContent() {
                 <Route path="/PriceHistory" element={<PriceHistory />} />
                 
                 <Route path="/PlatformInvoices" element={<PlatformInvoices />} />
+                
+                <Route path="/SelfHostGuideLaravel" element={<SelfHostGuideLaravel />} />
+                
+                <Route path="/SelfHostGuideNodeJS" element={<SelfHostGuideNodeJS />} />
+                
+                <Route path="/AdminSystemTests" element={<AdminSystemTests />} />
+                
+                <Route path="/ServiceManagement" element={<ServiceManagement />} />
                 
             </Routes>
         </Layout>

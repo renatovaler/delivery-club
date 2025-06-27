@@ -53,12 +53,18 @@ import {
   Image as ImageIcon,
   AlertTriangle,
   DollarSign,
-  Users // Adicionar Users para mostrar produtos em uso
+  Users, // Adicionar Users para mostrar produtos em uso
+  CheckCircle, // Added for new analytics card
+  Grid, // Added for new analytics card
+  Filter, // Added for new filter card
+  PackageSearch // Added for new CardTitle icon and empty state
 } from "lucide-react";
 import { formatCurrency, DAYS_OF_WEEK, PRODUCT_CATEGORIES, createNotification } from "@/components/lib";
 import { UploadFile } from "@/api/integrations";
 import PriceUpdateModal from "@/components/products/PriceUpdateModal"; // Importar novo componente
 import { format } from 'date-fns'; // Import date-fns format
+import { Link } from "react-router-dom"; // Added Link for navigation
+import { createPageUrl } from "@/utils"; // Added createPageUrl for dynamic links
 
 const UNIT_TYPES = [
   { value: "unidade", label: "Unidade" },
@@ -652,25 +658,60 @@ export default function ProductManagement() {
     await loadProducts(); // Recarregar produtos para refletir mudanças (and usage info)
   };
 
+  // Helper functions for new analytics cards
+  const getActiveProductsCount = () => {
+    return products.filter(p => p.status === 'active').length;
+  };
+
+  const getUniqueCategories = () => {
+    const categories = new Set(products.map(p => p.category));
+    return categories.size;
+  };
+
+  const getAveragePrice = () => {
+    if (products.length === 0) return 0;
+    const total = products.reduce((sum, p) => sum + parseFloat(p.price_per_unit || 0), 0);
+    return total / products.length;
+  };
+
+  // NOVO: Dummy function to simulate filter application or just provide the filtered list
+  // Assuming no actual filter state or logic is provided, this will just return all products for now.
+  // If filter state was present, it would be 'const filteredProducts = products.filter(...)'.
+  const filteredProducts = products; // Placeholder, assuming no active filters for this outline
+
   if (isLoading) {
     return (
-      <div className="p-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
+  const offeringType = team?.offering_type;
+  if (offeringType === 'services') {
+    return (
+        <div className="w-full p-6 md:p-8 text-center">
+            <Package className="w-16 h-16 mx-auto mb-4 text-gray-400"/>
+            <h1 className="text-2xl font-bold text-slate-800">Produtos Desativados</h1>
+            <p className="text-slate-600 mt-2">Sua empresa está configurada para vender apenas serviços. Para gerenciar produtos, altere o "Tipo de Oferta" nas Configurações da Empresa.</p>
+            <Link to={createPageUrl('BusinessSettings')}>
+                <Button className="mt-4">Ir para Configurações</Button>
+            </Link>
+        </div>
+    );
+  }
+
   return (
-    <div className="p-6 md:p-8 space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="w-full p-6 md:p-8 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">Gestão de Produtos</h1>
-          <p className="text-amber-600">Gerencie o catálogo de produtos da sua empresa</p> {/* Changed from padaria to empresa */}
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Gestão de Produtos</h1>
+          <p className="text-slate-600">Adicione, edite e organize os produtos oferecidos aos seus clientes.</p>
           {currentPlan && (
-            <p className="text-sm text-amber-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Plano {currentPlan.name}: {products.length}/{currentPlan.max_products || '∞'} produtos utilizados
             </p>
           )}
@@ -678,23 +719,22 @@ export default function ProductManagement() {
         <Button 
           onClick={() => handleOpenModal()}
           disabled={!canAddNewProduct()}
-          className={`${canAddNewProduct() ? 'bg-amber-600 hover:bg-amber-700' : 'bg-gray-400 cursor-not-allowed'}`}
+          className={`${canAddNewProduct() ? 'bg-slate-800 hover:bg-slate-900 text-white' : 'bg-gray-400 cursor-not-allowed'}`}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Novo Produto
+          Adicionar Produto
           {!canAddNewProduct() && " (Limite atingido)"}
         </Button>
       </div>
 
-      {/* Alerta de limite de produtos */}
       {currentPlan && currentPlan.max_products !== null && currentPlan.max_products !== undefined && products.length >= currentPlan.max_products && (
-        <Card className="border-amber-300 bg-amber-50">
+        <Card className="border-orange-300 bg-orange-50 border-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
               <div>
-                <p className="font-medium text-amber-900">Limite de produtos atingido</p>
-                <p className="text-sm text-amber-700">
+                <p className="font-medium text-orange-900">Limite de produtos atingido</p>
+                <p className="text-sm text-orange-700">
                   Você está usando {products.length} de {currentPlan.max_products} produtos permitidos pelo seu plano {currentPlan.name}.
                   Para adicionar mais produtos, considere fazer upgrade do seu plano.
                 </p>
@@ -704,144 +744,193 @@ export default function ProductManagement() {
         </Card>
       )}
 
-      <Card className="shadow-lg border-amber-200">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-blue-100">
+              Total de Produtos
+            </CardTitle>
+            <Package className="h-4 w-4 text-blue-200" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{products.length}</div>
+            <p className="text-xs text-blue-200 mt-1">
+              cadastrados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg border-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-green-100">
+              Produtos Ativos
+            </CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-200" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{getActiveProductsCount()}</div>
+            <p className="text-xs text-green-200 mt-1">
+              disponíveis
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg border-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-purple-100">
+              Categorias
+            </CardTitle>
+            <Grid className="h-4 w-4 text-purple-200" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{getUniqueCategories()}</div>
+            <p className="text-xs text-purple-200 mt-1">
+              diferentes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg border-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-orange-100">
+              Preço Médio
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-orange-200" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(getAveragePrice())}</div>
+            <p className="text-xs text-orange-200 mt-1">
+              por produto
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
-            <Package className="w-5 h-5" />
-            Catálogo de Produtos ({products.length})
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <Filter className="w-5 h-5" />
+            Filtros
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {products.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-amber-900 mb-2">
-                Nenhum produto cadastrado
+          {/* Filters content for products would go here if implemented */}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-lg border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <PackageSearch className="w-5 h-5" />
+            Produtos ({filteredProducts.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <PackageSearch className="w-12 h-12 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                {products.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado"}
               </h3>
-              <p className="text-amber-600 mb-6">
-                Comece criando produtos para sua padaria
+              <p className="text-slate-600 mb-6">
+                {products.length === 0 
+                  ? "Comece cadastrando seu primeiro produto"
+                  : "Tente ajustar os filtros para ver mais resultados"
+                }
               </p>
-              <Button 
-                onClick={() => handleOpenModal()} 
-                disabled={!canAddNewProduct()}
-                className={`${canAddNewProduct() ? 'bg-amber-600 hover:bg-amber-700' : 'bg-gray-400 cursor-not-allowed'}`}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Primeiro Produto
-                {!canAddNewProduct() && " (Limite atingido)"}
-              </Button>
+              {products.length === 0 && (
+                <Button 
+                  onClick={() => handleOpenModal()}
+                  className="bg-slate-800 hover:bg-slate-900 text-white"
+                  disabled={!canAddNewProduct()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Cadastrar Primeiro Produto
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-slate-50">
                     <TableHead>Produto</TableHead>
-                    <TableHead>Preço</TableHead>
-                    <TableHead>Áreas Atendidas</TableHead>
-                    <TableHead>Em Uso</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Preço de Venda</TableHead>
+                    <TableHead>Custo</TableHead> {/* NEW */}
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => {
-                    const usage = productUsageInfo[product.id] || { activeSubscriptions: 0 };
-                    
-                    return (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0">
-                              {product.image_url ? (
-                                <img 
-                                  src={product.image_url} 
-                                  alt={product.name}
-                                  className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                                  <Package className="w-4 h-4" />
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <Badge variant="outline" className="font-normal mt-1">
-                                {getCategoryLabel(product.category)}
-                              </Badge>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {formatCurrency(product.price_per_unit)} / {getUnitTypeLabel(product.unit_type)}
-                        </TableCell>
-                        <TableCell>
-                          <p className="text-sm text-gray-600 max-w-xs truncate" title={getAreaNames(product.available_area_ids)}>
-                             {getAreaNames(product.available_area_ids)}
-                          </p>
-                        </TableCell>
-                        <TableCell>
-                          {usage.activeSubscriptions > 0 ? (
-                            <Badge className="bg-blue-500 hover:bg-blue-600 flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              {usage.activeSubscriptions} assinatura{usage.activeSubscriptions > 1 ? 's' : ''}
-                            </Badge>
-                          ) : (
-                            <span className="text-gray-400 text-sm">Não usado</span>
+                  {filteredProducts.map((product) => (
+                    <TableRow key={product.id} className="hover:bg-slate-25">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {product.image_url && (
+                            <img
+                              src={product.image_url}
+                              alt={product.name}
+                              className="w-12 h-12 object-cover rounded-lg"
+                            />
                           )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={
-                            product.status === 'active' 
-                              ? 'bg-green-500 hover:bg-green-600' 
-                              : 'bg-gray-500 hover:bg-gray-600'
-                          }>
-                            {product.status === 'active' ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenModal(product)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenPriceModal(product)}
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              <DollarSign className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleStatus(product)}
-                            >
-                              {product.status === 'active' ? 
-                                <EyeOff className="w-4 h-4" /> : 
-                                <Eye className="w-4 h-4" />
-                              }
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteProduct(product)}
-                              className={`${usage.activeSubscriptions > 0 ? 'text-orange-600 hover:text-orange-700' : 'text-red-600 hover:text-red-700'}`}
-                              title={usage.activeSubscriptions > 0 ? `⚠️ Produto usado em ${usage.activeSubscriptions} assinatura(s)` : 'Excluir produto'}
-                            >
-                              {usage.activeSubscriptions > 0 ? <AlertTriangle className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-                            </Button>
+                          <div>
+                            <p className="font-medium text-slate-900">{product.name}</p>
+                            <p className="text-sm text-slate-600">{product.description}</p>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="border-slate-300 text-slate-700">
+                          {getCategoryLabel(product.category)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-bold text-green-600">
+                        {formatCurrency(product.price_per_unit)}/{getUnitTypeLabel(product.unit_type)}
+                      </TableCell>
+                      <TableCell className="font-bold text-blue-600"> {/* NEW */}
+                        {formatCurrency(product.cost_per_unit)}/{getUnitTypeLabel(product.unit_type)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={product.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
+                          {product.status === 'active' ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenModal(product)}
+                            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenPriceModal(product)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <DollarSign className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleToggleStatus(product)}
+                            className="bg-slate-500 hover:bg-slate-600 text-white"
+                          >
+                            {product.status === 'active' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteProduct(product)} // Changed back to product object as per original
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -922,11 +1011,11 @@ export default function ProductManagement() {
                   />
                   <Label 
                     htmlFor="product-image" 
-                    className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 transition-colors"
+                    className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors"
                   >
                     {isUploadingImage ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-amber-600 border-t-transparent"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
                         Carregando...
                       </>
                     ) : (
@@ -995,7 +1084,7 @@ export default function ProductManagement() {
                     readOnly={editingProduct && productUsageInfo[editingProduct.id]?.activeSubscriptions > 0}
                 />
                 {editingProduct && productUsageInfo[editingProduct.id]?.activeSubscriptions > 0 && (
-                  <p className="text-xs text-amber-600 mt-1">
+                  <p className="text-xs text-blue-600 mt-1">
                     Para alterar o preço, use o botão <strong className="text-blue-600">'$' (Atualizar Preço)</strong> na tabela principal.
                   </p>
                 )}

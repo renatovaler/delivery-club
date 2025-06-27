@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
 import { Team } from "@/api/entities";
@@ -7,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -15,20 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/components/lib";
 import {
@@ -43,7 +30,8 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -60,10 +48,10 @@ export default function PlatformInvoices() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
   const [summary, setSummary] = useState({
-    totalPaid: 0,
-    totalPending: 0,
-    currentMonthCost: 0,
-    averageMonthlySpent: 0
+    total: 0,
+    paid: 0,
+    pending: 0,
+    overdue: 0
   });
 
   const { toast } = useToast();
@@ -105,13 +93,11 @@ export default function PlatformInvoices() {
         }
         setTeam(teamData);
 
-        // CORREÇÃO: Carregar histórico de assinaturas/faturas da empresa
         const subscriptionHistory = await TeamSubscriptionHistory.filter(
           { team_id: teamData.id },
           '-invoice_date'
         );
 
-        // CORREÇÃO: Considerar todos os registros que têm informação de fatura
         const invoiceRecords = subscriptionHistory.filter(record => 
           record.invoice_date && record.invoice_amount !== null && record.invoice_amount !== undefined
         );
@@ -139,50 +125,20 @@ export default function PlatformInvoices() {
   };
 
   const calculateSummary = (invoiceData) => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-
-    const totalPaid = invoiceData
-      .filter(inv => inv.payment_status === 'paid')
-      .reduce((sum, inv) => sum + (inv.invoice_amount || 0), 0);
-
-    const totalPending = invoiceData
-      .filter(inv => inv.payment_status === 'pending')
-      .reduce((sum, inv) => sum + (inv.invoice_amount || 0), 0);
-
-    const currentMonthInvoices = invoiceData.filter(inv => {
-      if (!inv.invoice_date) return false;
-      const invoiceDate = parseISO(inv.invoice_date);
-      return invoiceDate.getMonth() === currentMonth && invoiceDate.getFullYear() === currentYear;
-    });
-
-    const currentMonthCost = currentMonthInvoices.reduce((sum, inv) => sum + (inv.invoice_amount || 0), 0);
-
-    const paidInvoices = invoiceData.filter(inv => inv.payment_status === 'paid');
-    const averageMonthlySpent = paidInvoices.length > 0 ? totalPaid / paidInvoices.length : 0;
-
-    setSummary({
-      totalPaid,
-      totalPending,
-      currentMonthCost,
-      averageMonthlySpent
-    });
+    const total = invoiceData.length;
+    const paid = invoiceData.filter(i => i.payment_status === 'paid').length;
+    const pending = invoiceData.filter(i => i.payment_status === 'pending').length;
+    const failed = invoiceData.filter(i => i.payment_status === 'failed').length;
+    
+    setSummary({ total, paid, pending, overdue: failed });
   };
 
   const applyFilters = () => {
     let filtered = invoices.filter(invoice => {
-      const matchesSearch = 
-        (invoice.plan_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (invoice.stripe_invoice_id || '').toLowerCase().includes(searchTerm.toLowerCase());
-      
+      const matchesSearch = invoice.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || invoice.payment_status === statusFilter;
-      
-      let matchesYear = true;
-      if (yearFilter !== "all" && invoice.invoice_date) {
-        const invoiceYear = parseISO(invoice.invoice_date).getFullYear();
-        matchesYear = invoiceYear.toString() === yearFilter;
-      }
+      const matchesYear = yearFilter === "all" || 
+        (invoice.invoice_date && new Date(invoice.invoice_date).getFullYear().toString() === yearFilter);
       
       return matchesSearch && matchesStatus && matchesYear;
     });
@@ -224,47 +180,39 @@ export default function PlatformInvoices() {
   };
 
   const exportInvoices = () => {
-    const csvData = [
-      ['Data da Fatura', 'Plano', 'Valor', 'Status', 'Data de Pagamento', 'Período de Cobrança'],
-      ...filteredInvoices.map(inv => [
-        formatDateSafe(inv.invoice_date),
-        inv.plan_name,
-        inv.invoice_amount?.toFixed(2).replace('.', ',') || '0,00',
-        inv.payment_status,
-        formatDateSafe(inv.payment_date),
-        `${formatDateSafe(inv.billing_period_start)} - ${formatDateSafe(inv.billing_period_end)}`
+    const csvContent = [
+      ['Data da Fatura', 'Valor', 'Status', 'Data de Pagamento', 'Notas'],
+      ...filteredInvoices.map(invoice => [
+        formatDateSafe(invoice.invoice_date),
+        invoice.invoice_amount || 0,
+        invoice.payment_status,
+        invoice.payment_date ? formatDateSafe(invoice.payment_date) : 'N/A',
+        invoice.notes || ''
       ])
-    ];
+    ].map(row => row.join(',')).join('\n');
 
-    const csvContent = csvData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `faturas_plataforma_${team?.name?.replace(/\s+/g, '_') || 'empresa'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'faturas_plataforma.csv';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
   };
 
-  // Obter anos únicos para o filtro
-  const availableYears = [...new Set(
-    invoices
-      .filter(inv => inv.invoice_date)
-      .map(inv => parseISO(inv.invoice_date).getFullYear())
+  const availableYears = [...new Set(invoices
+    .filter(i => i.invoice_date)
+    .map(i => new Date(i.invoice_date).getFullYear())
   )].sort((a, b) => b - a);
 
   if (isLoading) {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 bg-amber-200 rounded-xl"></div>
-            ))}
-          </div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
@@ -281,74 +229,67 @@ export default function PlatformInvoices() {
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">Faturas da Assinatura da Plataforma</h1>
-        <p className="text-amber-600">
-          Histórico completo de pagamentos da assinatura do Delivery Club para {team?.name}
-        </p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Faturas da Plataforma</h1>
+        <p className="text-slate-600">Gerencie suas faturas de assinatura dos planos da plataforma.</p>
       </div>
 
       {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium text-blue-100">Total de Faturas</CardTitle>
+            <FileText className="h-4 w-4 text-blue-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalPaid)}</div>
-            <p className="text-xs text-muted-foreground">Histórico completo</p>
+            <div className="text-2xl font-bold">{summary.total}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendente</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <CardTitle className="text-sm font-medium text-green-100">Pagas</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{formatCurrency(summary.totalPending)}</div>
-            <p className="text-xs text-muted-foreground">Aguardando pagamento</p>
+            <div className="text-2xl font-bold">{summary.paid}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mês Atual</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-yellow-100">Pendentes</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.currentMonthCost)}</div>
-            <p className="text-xs text-muted-foreground">{format(new Date(), 'MMMM yyyy', { locale: ptBR })}</p>
+            <div className="text-2xl font-bold">{summary.pending}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Média Mensal</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-600" />
+            <CardTitle className="text-sm font-medium text-red-100">Com Problemas</CardTitle>
+            <XCircle className="h-4 w-4 text-red-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{formatCurrency(summary.averageMonthlySpent)}</div>
-            <p className="text-xs text-muted-foreground">Gasto médio por mês</p>
+            <div className="text-2xl font-bold">{summary.overdue}</div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
+          <CardTitle className="flex items-center gap-2 text-slate-900">
             <FileText className="w-5 h-5" />
-            Histórico de Faturas ({filteredInvoices.length})
+            Suas Faturas ({filteredInvoices.length})
           </CardTitle>
           
-          {/* Filtros */}
-          <div className="flex flex-col lg:flex-row gap-4 mt-4">
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Buscar por plano ou ID da fatura..."
+                placeholder="Buscar por ID da fatura..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -361,10 +302,10 @@ export default function PlatformInvoices() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="paid">Pagos</SelectItem>
+                <SelectItem value="paid">Pagas</SelectItem>
                 <SelectItem value="pending">Pendentes</SelectItem>
                 <SelectItem value="failed">Falharam</SelectItem>
-                <SelectItem value="cancelled">Cancelados</SelectItem>
+                <SelectItem value="cancelled">Canceladas</SelectItem>
               </SelectContent>
             </Select>
 
@@ -380,7 +321,7 @@ export default function PlatformInvoices() {
               </SelectContent>
             </Select>
 
-            <Button onClick={exportInvoices} variant="outline">
+            <Button onClick={exportInvoices} variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
               <Download className="w-4 h-4 mr-2" />
               Exportar
             </Button>
@@ -388,61 +329,57 @@ export default function PlatformInvoices() {
         </CardHeader>
         
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-amber-50">
-                  <TableHead>Data da Fatura</TableHead>
-                  <TableHead>Plano</TableHead>
-                  <TableHead>Período de Cobrança</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data de Pagamento</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.length > 0 ? (
-                  filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id} className="hover:bg-amber-25">
-                      <TableCell className="font-medium">
-                        {formatDateSafe(invoice.invoice_date)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{invoice.plan_name}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatDateSafe(invoice.billing_period_start)} - {formatDateSafe(invoice.billing_period_end)}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(invoice.invoice_amount || 0)}
-                      </TableCell>
+          {filteredInvoices.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead>Fatura ID</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id} className="hover:bg-slate-50">
+                      <TableCell className="font-mono text-xs">{invoice.id}</TableCell>
+                      <TableCell>{formatDateSafe(invoice.invoice_date)}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(invoice.invoice_amount || 0)}</TableCell>
                       <TableCell>{getStatusBadge(invoice.payment_status)}</TableCell>
                       <TableCell>
-                        {invoice.payment_date ? formatDateSafe(invoice.payment_date) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewDetails(invoice)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDetails(invoice)}
+                            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Ver
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={invoice.payment_status !== 'pending'}
+                            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                          >
+                            Pagar
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12">
-                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">Nenhuma fatura encontrada.</p>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-slate-500">
+              <FileText className="w-12 h-12 mx-auto mb-4" />
+              <p>Nenhuma fatura encontrada.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -452,50 +389,61 @@ export default function PlatformInvoices() {
           <DialogHeader>
             <DialogTitle>Detalhes da Fatura</DialogTitle>
             <DialogDescription>
-              Informações completas sobre a fatura da assinatura da plataforma.
+              Informações completas sobre esta fatura da plataforma.
             </DialogDescription>
           </DialogHeader>
           
           {selectedInvoice && (
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Plano</label>
-                  <p className="font-semibold">{selectedInvoice.plan_name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Valor</label>
-                  <p className="font-semibold text-xl">{formatCurrency(selectedInvoice.invoice_amount || 0)}</p>
+                  <label className="text-sm font-medium text-gray-600">ID da Fatura</label>
+                  <p className="font-mono text-sm">{selectedInvoice.id}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>
                   <div className="mt-1">{getStatusBadge(selectedInvoice.payment_status)}</div>
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">Data da Fatura</label>
                   <p>{formatDateSafe(selectedInvoice.invoice_date)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Data de Pagamento</label>
-                  <p>{selectedInvoice.payment_date ? formatDateSafe(selectedInvoice.payment_date) : 'Não pago'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Período de Cobrança</label>
-                  <p>{formatDateSafe(selectedInvoice.billing_period_start)} - {formatDateSafe(selectedInvoice.billing_period_end)}</p>
+                  <label className="text-sm font-medium text-gray-600">Valor</label>
+                  <p className="font-semibold text-lg">{formatCurrency(selectedInvoice.invoice_amount || 0)}</p>
                 </div>
               </div>
 
-              {selectedInvoice.stripe_invoice_id && (
+              {selectedInvoice.payment_date && (
                 <div>
-                  <label className="text-sm font-medium text-gray-600">ID da Fatura (Stripe)</label>
-                  <p className="font-mono text-sm bg-gray-100 p-2 rounded">{selectedInvoice.stripe_invoice_id}</p>
+                  <label className="text-sm font-medium text-gray-600">Data de Pagamento</label>
+                  <p>{formatDateSafe(selectedInvoice.payment_date)}</p>
                 </div>
               )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Plano</label>
+                  <p>{selectedInvoice.plan_name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Período de Cobrança</label>
+                  <p className="text-sm">
+                    {selectedInvoice.billing_period_start && selectedInvoice.billing_period_end
+                      ? `${formatDateSafe(selectedInvoice.billing_period_start)} - ${formatDateSafe(selectedInvoice.billing_period_end)}`
+                      : 'N/A'
+                    }
+                  </p>
+                </div>
+              </div>
 
               {selectedInvoice.notes && (
                 <div>
                   <label className="text-sm font-medium text-gray-600">Observações</label>
-                  <p className="text-sm bg-amber-50 p-3 rounded border border-amber-200">{selectedInvoice.notes}</p>
+                  <p className="text-sm bg-gray-50 p-3 rounded">{selectedInvoice.notes}</p>
                 </div>
               )}
             </div>

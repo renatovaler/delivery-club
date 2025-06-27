@@ -1,4 +1,14 @@
-import { Notification } from '@/api/entities';
+
+// Mensagens padrão
+export const DEFAULT_MESSAGES = {
+  SUCCESS_SAVE: 'Salvo com sucesso',
+  SUCCESS_UPDATE: 'Atualizado com sucesso',
+  SUCCESS_DELETE: 'Removido com sucesso',
+  ERROR_SAVE: 'Erro ao salvar',
+  ERROR_UPDATE: 'Erro ao atualizar',
+  ERROR_DELETE: 'Erro ao remover',
+  ERROR_LOAD: 'Erro ao carregar dados'
+};
 
 export const formatCurrency = (value) => {
   if (value === null || value === undefined || isNaN(value)) {
@@ -51,6 +61,15 @@ export const BRAZILIAN_STATES = [
   { value: 'SP', label: 'São Paulo' },
   { value: 'SE', label: 'Sergipe' },
   { value: 'TO', label: 'Tocantins' }
+];
+
+// Categorias de negócios
+export const BUSINESS_CATEGORIES = [
+  { value: 'padaria', label: 'Padaria' },
+  { value: 'restaurante', label: 'Restaurante' },
+  { value: 'mercado', label: 'Mercado' },
+  { value: 'farmacia', label: 'Farmácia' },
+  { value: 'outros', label: 'Outros' }
 ];
 
 // Categorias de despesas
@@ -154,17 +173,6 @@ export const PRODUCT_CATEGORIES = [
   { value: "outros", label: "Outros", icon: "📦", group: "Outros" }
 ];
 
-// Mensagens padrão
-export const DEFAULT_MESSAGES = {
-  SUCCESS_SAVE: 'Salvo com sucesso',
-  SUCCESS_UPDATE: 'Atualizado com sucesso',
-  SUCCESS_DELETE: 'Removido com sucesso',
-  ERROR_SAVE: 'Erro ao salvar',
-  ERROR_UPDATE: 'Erro ao atualizar',
-  ERROR_DELETE: 'Erro ao remover',
-  ERROR_LOAD: 'Erro ao carregar dados'
-};
-
 // Função centralizada para traduções
 export const translations = {
   userTypes: {
@@ -249,6 +257,8 @@ export const createNotification = async ({ userId, title, message, linkTo, icon 
     }
 
     try {
+        // Importação dinâmica para evitar erros se a entidade não existir
+        const { Notification } = await import('@/api/entities');
         await Notification.create({
             user_id: userId,
             title,
@@ -259,5 +269,6 @@ export const createNotification = async ({ userId, title, message, linkTo, icon 
         });
     } catch (error) {
         console.error("Falha ao criar notificação:", error);
+        // Silenciosamente falhar para não quebrar o fluxo principal
     }
 };

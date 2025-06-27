@@ -53,7 +53,6 @@ export default function Profile() {
         title: "Sessão encerrada",
         description: "Você foi desconectado com sucesso.",
       });
-      // A página será recarregada automaticamente pelo logout
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
       toast({
@@ -111,7 +110,6 @@ export default function Profile() {
   };
 
   const handleSaveProfile = async () => {
-    // Validação de nome completo obrigatório
     if (!formData.full_name?.trim()) {
       toast({
         title: "Nome obrigatório",
@@ -121,7 +119,6 @@ export default function Profile() {
       return;
     }
 
-    // Validações específicas para clientes
     if (user?.user_type === 'customer') {
         const requiredAddressFields = {
           street: "Rua",
@@ -177,12 +174,12 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <div className="p-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
           <div className="space-y-4">
-            <div className="h-32 bg-amber-200 rounded-xl"></div>
-            <div className="h-64 bg-amber-200 rounded-xl"></div>
+            <div className="h-32 bg-slate-200 rounded-xl"></div>
+            <div className="h-64 bg-slate-200 rounded-xl"></div>
           </div>
         </div>
       </div>
@@ -190,20 +187,20 @@ export default function Profile() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">Meu Perfil</h1>
-        <p className="text-amber-600">Gerencie suas informações pessoais</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Meu Perfil</h1>
+        <p className="text-slate-600">Gerencie suas informações pessoais</p>
       </div>
 
       {/* Header do perfil */}
-      <Card className="shadow-lg border-amber-200">
+      <Card className="shadow-lg border-0 bg-white">
         <CardContent className="p-6">
           <div className="flex items-center gap-6">
             <div className="relative">
               <Avatar className="w-24 h-24">
                 <AvatarImage src={user?.profile_picture} />
-                <AvatarFallback className="bg-amber-200 text-amber-800 text-2xl">
+                <AvatarFallback className="bg-blue-100 text-blue-800 text-2xl">
                   {user?.full_name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -216,14 +213,14 @@ export default function Profile() {
               </Button>
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-amber-900">{user?.full_name}</h2>
-              <p className="text-amber-600 flex items-center gap-2 mt-1">
+              <h2 className="text-2xl font-bold text-slate-900">{user?.full_name}</h2>
+              <p className="text-slate-600 flex items-center gap-2 mt-1">
                 <Mail className="w-4 h-4" />
                 {user?.email}
               </p>
-              <p className="text-sm text-amber-500 mt-2">
+              <p className="text-sm text-slate-500 mt-2">
                 {user?.user_type === 'system_admin' && 'Administrador do Sistema'}
-                {user?.user_type === 'bakery_owner' && 'Proprietário de Padaria'}
+                {user?.user_type === 'business_owner' && 'Proprietário de Empresa'}
                 {user?.user_type === 'customer' && 'Cliente'}
               </p>
             </div>
@@ -232,25 +229,25 @@ export default function Profile() {
       </Card>
 
       <Tabs defaultValue="personal" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="personal" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+          <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">
             <UserIcon className="w-4 h-4" />
             Dados Pessoais
           </TabsTrigger>
-          <TabsTrigger value="address" className="flex items-center gap-2">
+          <TabsTrigger value="address" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">
             <MapPin className="w-4 h-4" />
             Endereço
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger value="security" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">
             <Lock className="w-4 h-4" />
             Segurança
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="personal">
-          <Card className="shadow-lg border-amber-200">
+          <Card className="shadow-lg border-0">
             <CardHeader>
-              <CardTitle className="text-amber-900">Informações Pessoais</CardTitle>
+              <CardTitle className="text-slate-900">Informações Pessoais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -277,7 +274,7 @@ export default function Profile() {
                     required={user?.user_type === 'customer'}
                   />
                    {user?.user_type === 'customer' && (
-                     <p className="text-xs text-amber-600">
+                     <p className="text-xs text-slate-600">
                         Obrigatório para contato sobre entregas.
                      </p>
                    )}
@@ -289,9 +286,9 @@ export default function Profile() {
                     id="email"
                     value={user?.email}
                     disabled
-                    className="bg-gray-50"
+                    className="bg-slate-50"
                   />
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-slate-600">
                     O e-mail não pode ser alterado
                   </p>
                 </div>
@@ -303,7 +300,7 @@ export default function Profile() {
                 <Button
                   onClick={handleSaveProfile}
                   disabled={isSaving}
-                  className="bg-amber-600 hover:bg-amber-700"
+                  className="bg-slate-800 hover:bg-slate-900 text-white"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Salvando...' : 'Salvar Alterações'}
@@ -314,9 +311,9 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="address">
-          <Card className="shadow-lg border-amber-200">
+          <Card className="shadow-lg border-0">
             <CardHeader>
-              <CardTitle className="text-amber-900">Endereço de Entrega</CardTitle>
+              <CardTitle className="text-slate-900">Endereço de Entrega</CardTitle>
               <CardDescription>
                 {user?.user_type === 'customer' 
                   ? "Este é seu endereço principal para entregas. É obrigatório para criar assinaturas."
@@ -409,7 +406,7 @@ export default function Profile() {
                 <Button
                   onClick={handleSaveProfile}
                   disabled={isSaving}
-                  className="bg-amber-600 hover:bg-amber-700"
+                  className="bg-slate-800 hover:bg-slate-900 text-white"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Salvando...' : 'Salvar Endereço'}
@@ -420,9 +417,9 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="security">
-          <Card className="shadow-lg border-amber-200">
+          <Card className="shadow-lg border-0">
             <CardHeader>
-              <CardTitle className="text-amber-900">Segurança da Conta</CardTitle>
+              <CardTitle className="text-slate-900">Segurança da Conta</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -463,19 +460,19 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
                   <div className="flex items-start gap-3">
-                    <Lock className="w-5 h-5 text-amber-600 mt-0.5" />
+                    <Lock className="w-5 h-5 text-slate-600 mt-0.5" />
                     <div className="flex-1">
-                      <h4 className="font-medium text-amber-900 mb-2">Tipo de Conta</h4>
-                      <p className="text-sm text-amber-700 mb-2">
+                      <h4 className="font-medium text-slate-900 mb-2">Tipo de Conta</h4>
+                      <p className="text-sm text-slate-700 mb-2">
                         <strong>Perfil:</strong> {
                           user?.user_type === 'system_admin' ? 'Administrador do Sistema' :
-                          user?.user_type === 'bakery_owner' ? 'Proprietário de Padaria' :
+                          user?.user_type === 'business_owner' ? 'Proprietário de Empresa' :
                           user?.user_type === 'customer' ? 'Cliente' : 'Não definido'
                         }
                       </p>
-                      <p className="text-sm text-amber-600">
+                      <p className="text-sm text-slate-600">
                         O tipo de conta determina suas permissões no sistema.
                       </p>
                     </div>

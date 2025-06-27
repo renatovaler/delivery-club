@@ -1,14 +1,27 @@
+
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
 import { SupportTicket } from "@/api/entities";
 import { TicketMessage } from "@/api/entities";
 import { Team } from "@/api/entities";
-import { Subscription } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription, // Added from outline
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription, // Added from outline
+  DialogFooter, // Added from outline
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger, // Added from outline
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -17,487 +30,390 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Plus,
-  MessageCircle,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Send,
-  Star,
-  Upload
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { UploadFile } from "@/api/integrations";
+import {
+  MessageCircle,
+  Plus, // New import
+  ArrowRight, // New import
+  Send, // New import
+  Building2, // New import
+  AlertCircle, // New import
+} from "lucide-react";
+
+// Replaced TICKET_TYPES, PRIORITY_OPTIONS, STATUS_OPTIONS, faqItems
+const ticketTypes = [
+  { value: "delivery_issue", label: "Problema na Entrega" },
+  { value: "product_issue", label: "Problema com Produto" },
+  { value: "billing_issue", label: "Dúvida sobre Cobrança" },
+  { value: "suggestion", label: "Sugestão" },
+  { value: "complaint", label: "Reclamação" },
+  { value: "support", label: "Suporte Geral" },
+];
 
 export default function CustomerSupport() {
   const [user, setUser] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [teams, setTeams] = useState({});
-  const [subscriptions, setSubscriptions] = useState([]);
-  const [selectedTicket, setSelectedTicket] = useState(null);
-  const [ticketMessages, setTicketMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  // New state variables for modal and selected ticket
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
-  const [newMessage, setNewMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [newTicketData, setNewTicketData] = useState({
+  const [newTicket, setNewTicket] = useState({
     team_id: "",
-    subscription_id: "",
-    type: "",
-    priority: "medium",
+    type: "support",
     subject: "",
-    description: ""
+    description: "",
   });
+
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
 
   const { toast } = useToast();
 
-  const TICKET_TYPES = [
-    { value: "support", label: "Suporte Geral" },
-    { value: "delivery_issue", label: "Problema com Entrega" },
-    { value: "product_issue", label: "Problema com Produto" },
-    { value: "billing_issue", label: "Problema de Cobrança" },
-    { value: "complaint", label: "Reclamação" },
-    { value: "suggestion", label: "Sugestão" }
-  ];
-
-  const PRIORITY_OPTIONS = [
-    { value: "low", label: "Baixa", color: "bg-gray-500" },
-    { value: "medium", label: "Média", color: "bg-blue-500" },
-    { value: "high", label: "Alta", color: "bg-orange-500" },
-    { value: "urgent", label: "Urgente", color: "bg-red-500" }
-  ];
-
-  const STATUS_OPTIONS = [
-    { value: "open", label: "Aberto", color: "bg-green-500" },
-    { value: "in_progress", label: "Em Andamento", color: "bg-blue-500" },
-    { value: "waiting_customer", label: "Aguardando Cliente", color: "bg-yellow-500" },
-    { value: "waiting_business", label: "Aguardando Empresa", color: "bg-orange-500" },
-    { value: "resolved", label: "Resolvido", color: "bg-emerald-500" },
-    { value: "closed", label: "Fechado", color: "bg-gray-500" }
-  ];
-
   useEffect(() => {
-    loadSupportData();
+    loadInitialData();
   }, []);
 
-  const loadSupportData = async () => {
+  const loadInitialData = async () => {
     setIsLoading(true);
     try {
       const userData = await User.me();
       setUser(userData);
-
-      // Carregar tickets do usuário
-      const userTickets = await SupportTicket.filter(
-        { customer_id: userData.id },
-        '-created_date'
-      );
-      setTickets(userTickets);
-
-      // Carregar assinaturas para seleção
-      const userSubscriptions = await Subscription.filter(
-        { customer_id: userData.id },
-        '-created_date'
-      );
-      setSubscriptions(userSubscriptions);
-
-      // Carregar empresas relacionadas
-      const teamIds = [...new Set([
-        ...userTickets.map(t => t.team_id).filter(Boolean),
-        ...userSubscriptions.map(s => s.team_id)
-      ])];
       
-      const teamsData = await Promise.all(
-        teamIds.map(id => Team.get(id).catch(() => null))
-      );
-      const teamsMap = teamsData.reduce((acc, team) => {
-        if (team) acc[team.id] = team;
-        return acc;
-      }, {});
-      setTeams(teamsMap);
-
+      const userTickets = await SupportTicket.filter({ customer_id: userData.id }, '-updated_date');
+      setTickets(userTickets);
+      
+      // Carregar dados das empresas (teams) relacionadas aos tickets do usuário
+      if (userTickets.length > 0) {
+        const teamIds = [...new Set(userTickets.map(t => t.team_id).filter(Boolean))];
+        const teamsData = await Promise.all(
+          teamIds.map(id => Team.get(id).catch(() => null))
+        );
+        const teamsMap = teamsData
+          .filter(Boolean)
+          .reduce((acc, team) => {
+            acc[team.id] = team;
+            return acc;
+          }, {});
+        setTeams(teamsMap);
+      }
     } catch (error) {
       console.error("Erro ao carregar dados de suporte:", error);
-      toast({ title: "Erro ao carregar dados", variant: "destructive" });
+      toast({ title: "Erro ao carregar tickets", variant: "destructive" });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleCreateTicket = async () => {
-    if (!newTicketData.subject.trim() || !newTicketData.description.trim()) {
-      toast({ title: "Campos obrigatórios", description: "Preencha assunto e descrição.", variant: "destructive" });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const ticketData = {
-        ...newTicketData,
-        customer_id: user.id,
-        team_id: newTicketData.team_id || null,
-        subscription_id: newTicketData.subscription_id || null
-      };
-
-      const newTicket = await SupportTicket.create(ticketData);
-      
-      toast({ title: "Ticket criado! ✅", description: "Sua solicitação foi registrada. Você receberá uma resposta em breve." });
-      
-      setIsNewTicketModalOpen(false);
-      setNewTicketData({
-        team_id: "",
-        subscription_id: "",
-        type: "",
-        priority: "medium",
-        subject: "",
-        description: ""
-      });
-      
-      await loadSupportData();
-    } catch (error) {
-      console.error("Erro ao criar ticket:", error);
-      toast({ title: "Erro ao criar ticket", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleSelectTicket = async (ticket) => {
     setSelectedTicket(ticket);
     try {
-      const messages = await TicketMessage.filter(
-        { ticket_id: ticket.id },
-        'created_date'
-      );
-      setTicketMessages(messages);
+      const ticketMessages = await TicketMessage.filter({ ticket_id: ticket.id }, 'created_date');
+      setMessages(ticketMessages);
     } catch (error) {
       console.error("Erro ao carregar mensagens:", error);
+      toast({ title: "Erro ao carregar mensagens do ticket", variant: "destructive" });
     }
   };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
-
-    setIsSubmitting(true);
+    setIsSending(true);
     try {
-      await TicketMessage.create({
+      const messageData = {
         ticket_id: selectedTicket.id,
         sender_id: user.id,
         sender_type: "customer",
-        message: newMessage.trim()
-      });
-
-      // Atualizar status do ticket se necessário
-      if (selectedTicket.status === 'waiting_customer') {
-        await SupportTicket.update(selectedTicket.id, { status: 'waiting_business' });
-      }
-
+        message: newMessage,
+      };
+      const createdMessage = await TicketMessage.create(messageData);
+      setMessages([...messages, createdMessage]);
       setNewMessage("");
-      await handleSelectTicket(selectedTicket);
-      await loadSupportData();
       
-      toast({ title: "Mensagem enviada! ✅" });
+      // Atualiza o ticket para refletir a nova mensagem
+      // Mark ticket as 'waiting_business' if customer sends a message
+      await SupportTicket.update(selectedTicket.id, { status: "waiting_business" });
+      setSelectedTicket(prev => ({...prev, status: "waiting_business"}));
+      
+      // Optionally reload all tickets to update status in the list
+      await loadInitialData();
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
       toast({ title: "Erro ao enviar mensagem", variant: "destructive" });
     } finally {
-      setIsSubmitting(false);
+      setIsSending(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusInfo = STATUS_OPTIONS.find(s => s.value === status);
-    return (
-      <Badge className={`${statusInfo?.color || 'bg-gray-500'} text-white`}>
-        {statusInfo?.label || status}
-      </Badge>
-    );
-  };
+  const handleCreateTicket = async () => {
+    // Validação
+    if (!newTicket.team_id || !newTicket.subject.trim() || !newTicket.description.trim()) {
+        toast({ title: "Preencha todos os campos", description: "Empresa, assunto e descrição são obrigatórios.", variant: "destructive" });
+        return;
+    }
 
-  const getPriorityBadge = (priority) => {
-    const priorityInfo = PRIORITY_OPTIONS.find(p => p.value === priority);
-    return (
-      <Badge variant="outline" className={`border-current`}>
-        {priorityInfo?.label || priority}
-      </Badge>
-    );
+    setIsCreating(true);
+    try {
+        const ticketData = {
+            ...newTicket,
+            customer_id: user.id,
+            priority: "medium", // default priority
+            status: "open"
+        };
+        const createdTicket = await SupportTicket.create(ticketData);
+        setTickets([createdTicket, ...tickets]); // Add new ticket to the top of the list
+        setIsNewTicketModalOpen(false); // Close the modal
+        setNewTicket({ team_id: "", type: "support", subject: "", description: "" }); // Reset form
+        toast({ title: "Ticket aberto com sucesso!", description: "Sua solicitação foi enviada para a empresa." });
+    } catch (error) {
+        console.error("Erro ao abrir ticket:", error);
+        toast({ title: "Erro ao abrir ticket", variant: "destructive" });
+    } finally {
+        setIsCreating(false);
+    }
   };
+  
+  // Updated getStatusBadge with new color palette
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      open: { text: "Aberto", color: "bg-blue-500 text-white" },
+      in_progress: { text: "Em Progresso", color: "bg-yellow-500 text-white" },
+      waiting_customer: { text: "Aguardando Você", color: "bg-orange-500 text-white" },
+      waiting_business: { text: "Aguardando Empresa", color: "bg-indigo-500 text-white" },
+      resolved: { text: "Resolvido", color: "bg-green-500 text-white" },
+      closed: { text: "Fechado", color: "bg-gray-500 text-white" },
+    };
+    const { text, color } = statusMap[status] || { text: status, color: "bg-gray-400 text-white" };
+    return <Badge className={color}>{text}</Badge>;
+  };
+  
+  // Filter unique teams from existing tickets to populate the new ticket form's team selection
+  const uniqueTeams = Array.from(new Set(tickets.map(t => t.team_id).filter(Boolean)))
+    .map(id => teams[id])
+    .filter(Boolean);
 
   if (isLoading) {
     return (
-      <div className="p-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
-          <div className="h-64 bg-amber-200 rounded-xl"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="h-64 bg-slate-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">Central de Suporte</h1>
-          <p className="text-amber-600">Entre em contato com as empresas ou solicite ajuda.</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Central de Suporte</h1>
+          <p className="text-slate-600">Converse com as empresas e resolva seus problemas.</p>
         </div>
-        
         <Dialog open={isNewTicketModalOpen} onOpenChange={setIsNewTicketModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-amber-600 hover:bg-amber-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Chamado
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Criar Novo Chamado</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Empresa (Opcional)</Label>
-                  <Select value={newTicketData.team_id} onValueChange={(value) => setNewTicketData(prev => ({ ...prev, team_id: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>Nenhuma empresa específica</SelectItem>
-                      {Object.values(teams).map(team => (
-                        <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Assinatura (Opcional)</Label>
-                  <Select 
-                    value={newTicketData.subscription_id} 
-                    onValueChange={(value) => setNewTicketData(prev => ({ ...prev, subscription_id: value }))}
-                    disabled={!newTicketData.team_id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma assinatura" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>Nenhuma assinatura específica</SelectItem>
-                      {subscriptions
-                        .filter(sub => !newTicketData.team_id || sub.team_id === newTicketData.team_id)
-                        .map(sub => (
-                          <SelectItem key={sub.id} value={sub.id}>
-                            Assinatura #{sub.id.slice(-6)}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tipo do Chamado *</Label>
-                  <Select value={newTicketData.type} onValueChange={(value) => setNewTicketData(prev => ({ ...prev, type: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TICKET_TYPES.map(type => (
-                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Prioridade</Label>
-                  <Select value={newTicketData.priority} onValueChange={(value) => setNewTicketData(prev => ({ ...prev, priority: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRIORITY_OPTIONS.map(priority => (
-                        <SelectItem key={priority.value} value={priority.value}>{priority.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Assunto *</Label>
-                <Input
-                  value={newTicketData.subject}
-                  onChange={(e) => setNewTicketData(prev => ({ ...prev, subject: e.target.value }))}
-                  placeholder="Descreva brevemente o problema"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Descrição *</Label>
-                <Textarea
-                  value={newTicketData.description}
-                  onChange={(e) => setNewTicketData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Descreva detalhadamente o problema ou solicitação"
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsNewTicketModalOpen(false)}>
-                  Cancelar
+            <DialogTrigger asChild>
+                <Button className="bg-slate-800 hover:bg-slate-900 text-white">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Abrir Novo Ticket
                 </Button>
-                <Button onClick={handleCreateTicket} disabled={isSubmitting}>
-                  {isSubmitting ? "Criando..." : "Criar Chamado"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Novo Ticket de Suporte</DialogTitle>
+                    <DialogDescription>
+                        Envie uma nova solicitação para uma das empresas que você já possui tickets.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="team">Empresa</Label>
+                        <Select 
+                            value={newTicket.team_id}
+                            onValueChange={(value) => setNewTicket(p => ({...p, team_id: value}))}
+                        >
+                            <SelectTrigger id="team">
+                                <SelectValue placeholder="Selecione a empresa..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {uniqueTeams.length > 0 ? (
+                                    uniqueTeams.map(team => (
+                                        <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                                    ))
+                                ) : (
+                                    <div className="p-2 text-sm text-gray-500">Nenhuma empresa encontrada.</div>
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="type">Tipo do Chamado *</Label>
+                        <Select 
+                            value={newTicket.type}
+                            onValueChange={(value) => setNewTicket(p => ({...p, type: value}))}
+                        >
+                            <SelectTrigger id="type">
+                                <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {ticketTypes.map(type => (
+                                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="subject">Assunto *</Label>
+                        <Input
+                            id="subject"
+                            value={newTicket.subject}
+                            onChange={(e) => setNewTicket(p => ({...p, subject: e.target.value}))}
+                            placeholder="Descreva brevemente o problema"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Descrição *</Label>
+                        <Textarea
+                            id="description"
+                            value={newTicket.description}
+                            onChange={(e) => setNewTicket(p => ({...p, description: e.target.value}))}
+                            placeholder="Descreva detalhadamente o problema ou solicitação"
+                            rows={4}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsNewTicketModalOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleCreateTicket} disabled={isCreating} className="bg-slate-800 hover:bg-slate-900 text-white">
+                        {isCreating ? "Enviando..." : "Abrir Ticket"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Lista de Tickets */}
         <div className="lg:col-span-1">
-          <Card>
+          <Card className="shadow-lg border-0 h-full">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" />
-                Meus Chamados ({tickets.length})
-              </CardTitle>
+              <CardTitle className="text-slate-900">Seus Tickets ({tickets.length})</CardTitle>
             </CardHeader>
             <CardContent>
               {tickets.length > 0 ? (
                 <div className="space-y-3">
-                  {tickets.map(ticket => (
+                  {tickets.map((ticket) => (
                     <div
                       key={ticket.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedTicket?.id === ticket.id ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:bg-gray-50'
-                      }`}
                       onClick={() => handleSelectTicket(ticket)}
+                      className={`p-4 rounded-lg cursor-pointer border ${
+                        selectedTicket?.id === ticket.id
+                          ? "bg-slate-100 border-slate-300"
+                          : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                      }`}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-sm truncate">{ticket.subject}</h4>
+                      <div className="flex justify-between items-start">
+                        <p className="font-medium text-slate-800 flex-1 truncate pr-2">
+                          {ticket.subject}
+                        </p>
                         {getStatusBadge(ticket.status)}
                       </div>
-                      <div className="flex justify-between items-center text-xs text-gray-500">
-                        <span>{teams[ticket.team_id]?.name || 'Suporte Geral'}</span>
-                        <span>{formatDistanceToNow(new Date(ticket.created_date), { addSuffix: true, locale: ptBR })}</span>
-                      </div>
+                      <p className="text-sm text-slate-600 mt-1">
+                        Para: {teams[ticket.team_id]?.name || 'Empresa desconhecida'}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-2">
+                        Última atualização: {formatDistanceToNow(new Date(ticket.updated_date), { addSuffix: true, locale: ptBR })}
+                      </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Nenhum chamado aberto</p>
+                <div className="text-center py-12 text-slate-500">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-4" />
+                  <p>Você ainda não abriu nenhum ticket.</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Detalhes do Ticket */}
+        {/* Detalhes do Ticket Selecionado */}
         <div className="lg:col-span-2">
-          {selectedTicket ? (
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{selectedTicket.subject}</CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      {getStatusBadge(selectedTicket.status)}
-                      {getPriorityBadge(selectedTicket.priority)}
-                      <Badge variant="outline">
-                        {TICKET_TYPES.find(t => t.value === selectedTicket.type)?.label || selectedTicket.type}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Descrição inicial */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Descrição inicial:</p>
-                  <p className="text-gray-800">{selectedTicket.description}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Criado em {new Date(selectedTicket.created_date).toLocaleDateString('pt-BR')} às {new Date(selectedTicket.created_date).toLocaleTimeString('pt-BR')}
-                  </p>
-                </div>
-
-                {/* Mensagens */}
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {ticketMessages.map(message => (
-                    <div
-                      key={message.id}
-                      className={`p-3 rounded-lg ${
-                        message.sender_type === 'customer' 
-                          ? 'bg-blue-50 border-l-4 border-blue-500 ml-8' 
-                          : 'bg-green-50 border-l-4 border-green-500 mr-8'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium">
-                          {message.sender_type === 'customer' ? 'Você' : 'Empresa'}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(message.created_date), { addSuffix: true, locale: ptBR })}
+          <Card className="shadow-lg border-0 h-full">
+            <CardHeader>
+              <CardTitle className="text-slate-900">
+                {selectedTicket ? selectedTicket.subject : "Detalhes da Conversa"}
+              </CardTitle>
+              {selectedTicket && (
+                <CardDescription className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-slate-500" />
+                  {teams[selectedTicket.team_id]?.name || 'Empresa desconhecida'}
+                  <AlertCircle className="w-4 h-4 text-slate-500 ml-4" />
+                  {ticketTypes.find(type => type.value === selectedTicket.type)?.label || 'Tipo desconhecido'}
+                </CardDescription>
+              )}
+            </CardHeader>
+            <CardContent className="flex flex-col h-[60vh]">
+              {selectedTicket ? (
+                <>
+                  <div className="flex-1 overflow-y-auto p-4 bg-slate-50 rounded-lg space-y-4">
+                    {messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col ${
+                          msg.sender_id === user.id ? "items-end" : "items-start"
+                        }`}
+                      >
+                        <div
+                          className={`max-w-md p-3 rounded-xl ${
+                            msg.sender_id === user.id
+                              ? "bg-blue-500 text-white"
+                              : "bg-slate-200 text-slate-800"
+                          }`}
+                        >
+                          <p>{msg.message}</p>
+                        </div>
+                        <span className="text-xs text-slate-500 mt-1">
+                          {msg.sender_type === 'customer' ? user?.full_name?.split(' ')[0] : teams[selectedTicket.team_id]?.name}
+                          {' - '}
+                          {formatDistanceToNow(new Date(msg.created_date), { addSuffix: true, locale: ptBR })}
                         </span>
                       </div>
-                      <p className="text-gray-800">{message.message}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Nova mensagem */}
-                {selectedTicket.status !== 'closed' && (
-                  <div className="border-t pt-4">
-                    <div className="flex gap-2">
-                      <Textarea
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Digite sua mensagem..."
-                        rows={3}
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={isSubmitting || !newMessage.trim()}
-                        className="bg-amber-600 hover:bg-amber-700 h-fit"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="flex items-center justify-center h-96">
-                <div className="text-center">
-                  <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                    Selecione um chamado
-                  </h3>
-                  <p className="text-gray-500">
-                    Escolha um chamado da lista para ver os detalhes e conversar
-                  </p>
+                  <div className="mt-4 flex gap-2">
+                    <Textarea
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Digite sua mensagem..."
+                      className="flex-1 resize-none"
+                      rows={1}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button onClick={handleSendMessage} disabled={isSending || !newMessage.trim()} className="bg-slate-800 hover:bg-slate-900 text-white">
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
+                  <ArrowRight className="w-12 h-12 mx-auto mb-4" />
+                  <p>Selecione um ticket para ver a conversa.</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

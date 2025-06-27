@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Notification } from '@/api/entities';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -15,7 +14,9 @@ import {
     PauseCircle, 
     PlayCircle, 
     XCircle, 
-    Building2 
+    Building2,
+    AlertTriangle,
+    MapPin
 } from 'lucide-react';
 
 const iconMap = {
@@ -25,6 +26,8 @@ const iconMap = {
     PlayCircle,
     XCircle,
     Building2,
+    AlertTriangle,
+    MapPin
 };
 
 const NotificationIcon = ({ name }) => {
@@ -37,16 +40,25 @@ export default function NotificationBell({ user }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
+    setHasError(false);
+    
     try {
+      // Dinamicamente importar a entidade Notification
+      const { Notification } = await import('@/api/entities');
       const userNotifications = await Notification.filter({ user_id: user.id }, '-created_date', 20);
       setNotifications(userNotifications);
       setUnreadCount(userNotifications.filter(n => n.status === 'unread').length);
     } catch (error) {
       console.error("Erro ao buscar notificações:", error);
+      setHasError(true);
+      // Silenciosamente falhar - não mostrar toast para não poluir interface
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -61,10 +73,11 @@ export default function NotificationBell({ user }) {
 
   const handleMarkAsRead = async (notificationId) => {
     try {
+      const { Notification } = await import('@/api/entities');
       await Notification.update(notificationId, { status: 'read' });
       const newNotifications = notifications.map(n => n.id === notificationId ? { ...n, status: 'read' } : n);
       setNotifications(newNotifications);
-      setUnreadCount(prev => prev - 1);
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Erro ao marcar notificação como lida:", error);
     }
@@ -73,8 +86,8 @@ export default function NotificationBell({ user }) {
   const handleMarkAllAsRead = async () => {
     setIsLoading(true);
     try {
+        const { Notification } = await import('@/api/entities');
         const unreadNotifications = notifications.filter(n => n.status === 'unread');
-        // Usar bulk update se disponível, senão iterar
         await Promise.all(
             unreadNotifications.map(n => Notification.update(n.id, { status: 'read' }))
         );
@@ -102,7 +115,7 @@ export default function NotificationBell({ user }) {
         <div className="p-2">
           <div className="flex justify-between items-center mb-4">
             <h4 className="font-medium text-amber-900">Notificações</h4>
-            {unreadCount > 0 && (
+            {unreadCount > 0 && !hasError && (
                 <Button 
                     variant="link" 
                     size="sm" 
@@ -116,7 +129,20 @@ export default function NotificationBell({ user }) {
             )}
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {isLoading && notifications.length === 0 ? (
+            {hasError ? (
+                <div className="text-center p-4">
+                    <AlertTriangle className="w-6 h-6 mx-auto text-amber-500 mb-2" />
+                    <p className="text-sm text-amber-600">Sistema de notificações indisponível</p>
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={fetchNotifications}
+                        className="mt-2"
+                    >
+                        Tentar novamente
+                    </Button>
+                </div>
+            ) : isLoading && notifications.length === 0 ? (
                 <div className="text-center p-4">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-amber-500" />
                 </div>

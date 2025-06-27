@@ -4,21 +4,11 @@ import { Plan } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -31,21 +21,28 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { PlusCircle, Edit, MoreVertical, Trash2, CreditCard } from 'lucide-react';
+import {
+  Edit,
+  MoreVertical,
+  Plus,
+  XCircle,
+  CheckCircle,
+  Loader2,
+} from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 export default function AdminPlans() {
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    max_delivery_areas: '',
     max_subscriptions: '',
-    max_products: '', // Novo campo
+    max_products: '',
   });
   const { toast } = useToast();
 
@@ -65,29 +62,17 @@ export default function AdminPlans() {
     }
   };
 
-  const handleOpenDialog = (plan = null) => {
-    if (plan) {
-      setEditingPlan(plan);
-      setFormData({
-        name: plan.name,
-        description: plan.description || '',
-        price: plan.price,
-        max_delivery_areas: plan.max_delivery_areas,
-        max_subscriptions: plan.max_subscriptions,
-        max_products: plan.max_products || '', // Novo campo
-      });
-    } else {
-      setEditingPlan(null);
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        max_delivery_areas: '',
-        max_subscriptions: '',
-        max_products: '', // Novo campo
-      });
-    }
-    setIsDialogOpen(true);
+  const handleEditPlan = (plan) => {
+    setEditingPlan(plan);
+    setFormData({
+      name: plan.name,
+      description: plan.description || '',
+      price: plan.price,
+      // Removed max_delivery_areas
+      max_subscriptions: plan.max_subscriptions,
+      max_products: plan.max_products === null ? '' : plan.max_products.toString(),
+    });
+    setIsModalOpen(true);
   };
 
   const handleSave = async () => {
@@ -95,9 +80,10 @@ export default function AdminPlans() {
     const planData = {
       ...formData,
       price: parseFloat(formData.price),
-      max_delivery_areas: parseInt(formData.max_delivery_areas, 10),
+      // Removed max_delivery_areas
       max_subscriptions: parseInt(formData.max_subscriptions, 10),
-      max_products: parseInt(formData.max_products, 10), // Novo campo
+      // If max_products is an empty string, set it to null to represent 'unlimited'
+      max_products: formData.max_products === '' ? null : parseInt(formData.max_products, 10),
     };
 
     try {
@@ -108,7 +94,7 @@ export default function AdminPlans() {
         await Plan.create(planData);
         toast({ title: 'Plano criado com sucesso!' });
       }
-      setIsDialogOpen(false);
+      setIsModalOpen(false);
       loadPlans();
     } catch (error) {
       toast({ title: 'Erro ao salvar o plano', variant: 'destructive' });
@@ -117,7 +103,7 @@ export default function AdminPlans() {
     }
   };
 
-  const handleDeactivate = async (plan) => {
+  const handleToggleStatus = async (plan) => {
     const newStatus = plan.status === 'active' ? 'inactive' : 'active';
     try {
       await Plan.update(plan.id, { status: newStatus });
@@ -128,87 +114,136 @@ export default function AdminPlans() {
     }
   };
 
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+    }).format(value);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full p-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-64 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">Planos de Assinatura</h1>
-          <p className="text-amber-600">Gerencie os planos disponíveis para as empresas.</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Planos da Plataforma</h1>
+          <p className="text-slate-600">Gerencie os planos de assinatura disponíveis para as empresas</p>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="bg-amber-600 hover:bg-amber-700">
-          <PlusCircle className="mr-2 h-4 w-4" />
+        <Button
+          onClick={() => {
+            setEditingPlan(null);
+            setFormData({ name: "", description: "", price: "", max_subscriptions: "", max_products: "" });
+            setIsModalOpen(true);
+          }}
+          className="bg-slate-800 hover:bg-slate-900 text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
           Novo Plano
         </Button>
       </div>
 
-      <Card className="shadow-lg border-amber-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
-            <CreditCard className="w-5 h-5" />
-            Planos Existentes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Preço</TableHead>
-                <TableHead>Max Áreas</TableHead>
-                <TableHead>Max Assinaturas</TableHead>
-                <TableHead>Max Produtos</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {plans.map(plan => (
-                <TableRow key={plan.id}>
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell>R$ {plan.price.toFixed(2)}/mês</TableCell>
-                  <TableCell>{plan.max_delivery_areas}</TableCell>
-                  <TableCell>{plan.max_subscriptions}</TableCell>
-                  <TableCell>{plan.max_products || 'Ilimitado'}</TableCell>
-                  <TableCell>
-                    <Badge variant={plan.status === 'active' ? 'default' : 'secondary'}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {plans.map((plan) => (
+          <Card key={plan.id} className={`shadow-lg border-0 ${plan.status === 'inactive' ? 'opacity-60' : ''}`}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-slate-900">{plan.name}</CardTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge
+                      variant={plan.status === 'active' ? 'default' : 'secondary'}
+                      className={plan.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}
+                    >
                       {plan.status === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleOpenDialog(plan)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeactivate(plan)}>
-                          {plan.status === 'active' ? <Trash2 className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                          {plan.status === 'active' ? 'Desativar' : 'Ativar'}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEditPlan(plan)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleToggleStatus(plan)}
+                      className={plan.status === 'active' ? 'text-red-600' : 'text-green-600'}
+                    >
+                      {plan.status === 'active' ? (
+                        <>
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Desativar
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Ativar
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-slate-900">
+                  {formatCurrency(plan.price)}
+                </div>
+                <div className="text-sm text-slate-600">por mês</div>
+              </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <div className="text-sm text-slate-600">
+                {plan.description}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2 text-sm">
+                {/* Removed max_delivery_areas display */}
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Assinaturas:</span>
+                  <span className="font-medium text-slate-900">{plan.max_subscriptions}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Produtos:</span>
+                  <span className="font-medium text-slate-900">
+                    {plan.max_products === null ? 'Ilimitado' : plan.max_products}
+                  </span>
+                </div>
+              </div>
+
+              <Separator />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingPlan ? 'Editar Plano' : 'Novo Plano'}</DialogTitle>
-            <DialogDescription>
-              Preencha os detalhes do plano de assinatura.
-            </DialogDescription>
+            <DialogTitle>{editingPlan ? 'Editar Plano' : 'Criar Novo Plano'}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="space-y-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">Nome</Label>
               <Input id="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="col-span-3" />
@@ -217,10 +252,7 @@ export default function AdminPlans() {
               <Label htmlFor="price" className="text-right">Preço (R$)</Label>
               <Input id="price" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="col-span-3" />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="max_delivery_areas" className="text-right">Max Áreas</Label>
-              <Input id="max_delivery_areas" type="number" value={formData.max_delivery_areas} onChange={e => setFormData({...formData, max_delivery_areas: e.target.value})} className="col-span-3" />
-            </div>
+            {/* Removed max_delivery_areas input */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="max_subscriptions" className="text-right">Max Assinaturas</Label>
               <Input id="max_subscriptions" type="number" value={formData.max_subscriptions} onChange={e => setFormData({...formData, max_subscriptions: e.target.value})} className="col-span-3" />
@@ -235,9 +267,12 @@ export default function AdminPlans() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Salvando...' : 'Salvar'}
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving} className="bg-slate-800 hover:bg-slate-900 text-white">
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {editingPlan ? 'Atualizar' : 'Criar'} Plano
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -37,6 +37,8 @@ export const TeamSubscriptionHistory = base44.entities.TeamSubscriptionHistory;
 
 export const TeamChangeHistory = base44.entities.TeamChangeHistory;
 
+export const Service = base44.entities.Service;
+
 
 
 // auth sdk:

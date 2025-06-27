@@ -13,7 +13,6 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Users,
-  Wheat,
   MapPin,
   TrendingUp,
   Calendar,
@@ -21,7 +20,8 @@ import {
   DollarSign,
   AlertTriangle,
   ClipboardList,
-  Key, // Added Key icon
+  Key,
+  Package, // Added Package icon
 } from "lucide-react";
 import { format, addDays, differenceInCalendarWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -35,6 +35,9 @@ export default function BusinessDashboard() {
   const [deliveryAreas, setDeliveryAreas] = useState([]);
   const [todayProduction, setTodayProduction] = useState(0);
   const [tomorrowProduction, setTomorrowProduction] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0); // New state for total products
+  const [activeProducts, setActiveProducts] = useState(0); // New state for active products
+  const [monthlyRevenue, setMonthlyRevenue] = useState(0); // New state for monthly revenue
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -154,12 +157,15 @@ export default function BusinessDashboard() {
 
         setTeam(teamData);
 
-        const [teamSubscriptions, areas] = await Promise.all([
+        const [teamSubscriptions, areas, products] = await Promise.all([
           Subscription.filter({
             team_id: userData.current_team_id,
             status: "active"
           }),
           DeliveryArea.filter({
+            team_id: userData.current_team_id
+          }),
+          Product.filter({
             team_id: userData.current_team_id
           })
         ]);
@@ -172,6 +178,12 @@ export default function BusinessDashboard() {
 
         setSubscriptions(teamSubscriptions);
         setDeliveryAreas(areas);
+        setTotalProducts(products.length);
+        setActiveProducts(products.filter(p => p.status === 'active').length);
+
+        // Calcular receita mensal total
+        const totalMonthlyRevenue = teamSubscriptions.reduce((sum, sub) => sum + (sub.monthly_price || 0), 0);
+        setMonthlyRevenue(totalMonthlyRevenue);
 
         const today = new Date();
         const tomorrow = addDays(today, 1);
@@ -195,17 +207,16 @@ export default function BusinessDashboard() {
   };
 
   const totalCustomers = new Set(subscriptions.map(s => s.customer_id)).size;
-  const weeklyRevenue = subscriptions.reduce((sum, sub) => sum + (sub.weekly_price || 0), 0);
-  const activeAreas = deliveryAreas.filter(area => area.status === 'active').length;
+  const totalDeliveryAreas = deliveryAreas.length;
 
   if (isLoading) {
     return (
-      <div className="p-8">
+      <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-amber-200 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 bg-amber-200 rounded-xl"></div>
+              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -214,37 +225,37 @@ export default function BusinessDashboard() {
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="w-full p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-amber-900 mb-2 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
           <ClipboardList className="w-8 h-8" />
           Painel da Empresa
         </h1>
-        <p className="text-amber-600">
+        <p className="text-slate-600">
           Gerencie sua produção e entregas de produtos.
         </p>
       </div>
 
       {/* Alerta sobre configuração do Stripe */}
       {team && (!team.stripe_public_key || !team.stripe_secret_key) && (
-        <Card className="border-amber-300 bg-amber-50">
+        <Card className="bg-orange-50 border-0">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
               <div className="flex-1">
-                <p className="font-medium text-amber-900">Configuração do Stripe Pendente</p>
-                <p className="text-sm text-amber-700 mt-1">
+                <p className="font-medium text-orange-900">Configuração do Stripe Pendente</p>
+                <p className="text-sm text-orange-700 mt-1">
                   Sua empresa foi criada com sucesso, mas ainda não está disponível para vendas. Configure suas chaves do Stripe para começar a receber pedidos dos clientes.
                 </p>
                 <div className="flex gap-2 mt-3">
                   <Link to={createPageUrl("StripeConfiguration")}>
-                    <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
+                    <Button size="sm" className="bg-slate-800 hover:bg-slate-900 text-white">
                       <Key className="w-4 h-4 mr-2" />
                       Configurar Stripe
                     </Button>
                   </Link>
                   <Link to={createPageUrl("BusinessSettings")}>
-                    <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                    <Button size="sm" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
                       Configurações Gerais
                     </Button>
                   </Link>
@@ -257,7 +268,7 @@ export default function BusinessDashboard() {
 
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-blue-100">
               Clientes Ativos
@@ -272,73 +283,73 @@ export default function BusinessDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-green-100">
-              Receita Semanal
+              Receita Mensal
             </CardTitle>
             <DollarSign className="h-4 w-4 text-green-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(weeklyRevenue)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(monthlyRevenue)}</div>
             <p className="text-xs text-green-200 mt-1">
-              Receita semanal recorrente
+              Receita mensal recorrente
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-none shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-amber-100">
-              Produção Hoje
-            </CardTitle>
-            <Wheat className="h-4 w-4 text-amber-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todayProduction}</div>
-            <p className="text-xs text-amber-200 mt-1">
-              itens para entregar
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-none shadow-lg">
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-purple-100">
-              Áreas Ativas
+              Produtos Disponíveis
             </CardTitle>
-            <MapPin className="h-4 w-4 text-purple-200" />
+            <Package className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeAreas}</div>
+            <div className="text-2xl font-bold">{totalProducts}</div>
             <p className="text-xs text-purple-200 mt-1">
-              locais de entrega
+              {activeProducts} ativos no catálogo
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-orange-100">
+              Áreas de Entrega
+            </CardTitle>
+            <MapPin className="h-4 w-4 text-orange-200" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalDeliveryAreas}</div>
+            <p className="text-xs text-orange-200 mt-1">
+              Regiões atendidas
             </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Produção dos próximos dias */}
-        <Card className="shadow-lg border-amber-200">
+        {/* Próximas entregas */}
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
+            <CardTitle className="flex items-center gap-2 text-slate-900">
               <Calendar className="w-5 h-5" />
-              Entregas Programadas
+              Próximas Entregas
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-amber-100 rounded-lg border border-amber-300">
+              <div className="flex items-center justify-between p-4 bg-slate-100 rounded-lg">
                 <div>
-                  <p className="font-medium text-amber-900">Hoje</p>
-                  <p className="text-sm text-amber-600">
+                  <p className="font-medium text-slate-900">Hoje</p>
+                  <p className="text-sm text-slate-600">
                     {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-amber-900">{todayProduction}</p>
-                  <p className="text-sm text-amber-600">produtos</p>
+                  <p className="text-2xl font-bold text-slate-900">{todayProduction}</p>
+                  <p className="text-sm text-slate-600">produtos</p>
                 </div>
               </div>
 
@@ -356,7 +367,7 @@ export default function BusinessDashboard() {
               </div>
 
               <Link to={createPageUrl("DeliveryManagement")}>
-                <Button className="w-full mt-4 bg-amber-600 hover:bg-amber-700">
+                <Button className="w-full mt-4 bg-slate-800 hover:bg-slate-900 text-white">
                   <Truck className="w-4 h-4 mr-2" />
                   Ver Gestão de Entregas
                 </Button>
@@ -365,89 +376,44 @@ export default function BusinessDashboard() {
           </CardContent>
         </Card>
 
-        {/* Status da assinatura */}
-        <Card className="shadow-lg border-amber-200">
+        {/* Ações rápidas */}
+        <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
-              <TrendingUp className="w-5 h-5" />
-              Status da Plataforma
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <ClipboardList className="w-5 h-5" />
+              Ações Rápidas
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-green-900">Assinatura</p>
-                  <p className="text-sm text-green-600">
-                    {translateSubscriptionStatus(team?.subscription_status)}
-                  </p>
-                </div>
-                <Badge className={team?.subscription_status === 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-amber-500 hover:bg-amber-600'}>
-                  {translateSubscriptionStatus(team?.subscription_status)}
-                </Badge>
-              </div>
-
-              {team?.subscription_status === 'trial' && (
-                <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-amber-900">Período Trial</p>
-                    <p className="text-sm text-amber-600 mt-1">
-                      Aproveite todos os recursos por tempo limitado
-                    </p>
-                    <Link to={createPageUrl("BusinessSettings")}>
-                      <Button size="sm" className="mt-2 bg-amber-600 hover:bg-amber-700">
-                        Ativar Assinatura
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              <Link to={createPageUrl("TeamManagement")}>
-                <Button variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50">
-                  Gerenciar Equipe
+            <div className="grid grid-cols-1 gap-3">
+              <Link to={createPageUrl("ProductManagement")}>
+                <Button className="w-full justify-start bg-slate-800 hover:bg-slate-900 text-white">
+                  <Package className="w-4 h-4 mr-2" />
+                  Gerenciar Produtos
+                </Button>
+              </Link>
+              <Link to={createPageUrl("DeliveryManagement")}>
+                <Button className="w-full justify-start bg-slate-800 hover:bg-slate-900 text-white">
+                  <Truck className="w-4 h-4 mr-2" />
+                  Gestão de Entregas
+                </Button>
+              </Link>
+              <Link to={createPageUrl("Customers")}>
+                <Button className="w-full justify-start bg-slate-800 hover:bg-slate-900 text-white">
+                  <Users className="w-4 h-4 mr-2" />
+                  Ver Clientes
+                </Button>
+              </Link>
+              <Link to={createPageUrl("FinancialManagement")}>
+                <Button className="w-full justify-start bg-slate-800 hover:bg-slate-900 text-white">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Relatórios Financeiros
                 </Button>
               </Link>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Ações rápidas */}
-      <Card className="shadow-lg border-amber-200">
-        <CardHeader>
-          <CardTitle className="text-amber-900">Ações Rápidas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Link to={createPageUrl("DeliveryManagement")}>
-              <Button className="w-full h-16 bg-amber-600 hover:bg-amber-700 flex-col gap-2">
-                <Truck className="w-5 h-5" />
-                Gestão de Entregas
-              </Button>
-            </Link>
-            <Link to={createPageUrl("Customers")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
-                <Users className="w-5 h-5" />
-                Gerenciar Clientes
-              </Button>
-            </Link>
-            <Link to={createPageUrl("DeliveryAreas")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
-                <MapPin className="w-5 h-5" />
-                Áreas de Entrega
-              </Button>
-            </Link>
-            <Link to={createPageUrl("TeamManagement")}>
-              <Button variant="outline" className="w-full h-16 border-amber-300 text-amber-700 hover:bg-amber-50 flex-col gap-2">
-                <Users className="w-5 h-5" />
-                Equipe
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
