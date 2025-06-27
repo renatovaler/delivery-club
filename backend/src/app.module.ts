@@ -9,6 +9,8 @@ import { InvoiceModule } from './invoice/invoice.module';
 import { DeliveryAreaModule } from './delivery-area/delivery-area.module';
 import { ExpenseModule } from './expense/expense.module';
 import { NotificationModule } from './notification/notification.module';
+import { PlanModule } from './plan/plan.module';
+import { PlatformReportModule } from './platform-report/platform-report.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { NotificationModule } from './notification/notification.module';
     DeliveryAreaModule,
     ExpenseModule,
     NotificationModule,
+    PlanModule,
+    PlatformReportModule,
   ],
   controllers: [],
   providers: [],
