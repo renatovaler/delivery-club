@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Usuário
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          String    @default("user")
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+}
+
+// Modelo de Equipe baseado no Team.json
+model Team {
+  id                        String    @id @default(cuid())
+  name                     String
+  offering_type            String    @default("products")
+  cnpj_cpf                 String
+  description              String?
+  logo                     String?
+  category                 String    @default("outros")
+  owner_id                 String
+  status                   String    @default("active")
+  subscription_status      String    @default("trial")
+  plan_id                  String?
+  cancellation_effective_date DateTime?
+  stripe_public_key        String?
+  stripe_secret_key        String?
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+
+  // Relacionamentos
+  subscriptions           Subscription[]
+  team_members           TeamMember[]
+  delivery_areas         DeliveryArea[]
+  products              Product[]
+}
+
+// Modelo de Assinatura baseado no Subscription.json
+model Subscription {
+  id                    String    @id @default(cuid())
+  customer_id           String
+  team_id              String
+  delivery_area_id     String
+  monthly_price        Float
+  status               String    @default("pending_payment")
+  start_date           DateTime
+  next_billing_date    DateTime
+  cancellation_date    DateTime?
+  stripe_subscription_id String?
+  special_instructions  String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  team                 Team      @relation(fields: [team_id], references: [id])
+  delivery_area        DeliveryArea @relation(fields: [delivery_area_id], references: [id])
+  subscription_items   SubscriptionItem[]
+}
+
+// Modelo de Área de Entrega
+model DeliveryArea {
+  id                    String    @id @default(cuid())
+  team_id              String
+  name                 String
+  status               String    @default("active")
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  team                 Team      @relation(fields: [team_id], references: [id])
+  subscriptions        Subscription[]
+}
+
+// Modelo de Produto
+model Product {
+  id                    String    @id @default(cuid())
+  team_id              String
+  name                 String
+  description          String?
+  price                Float
+  status               String    @default("active")
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  team                 Team      @relation(fields: [team_id], references: [id])
+  subscription_items   SubscriptionItem[]
+}
+
+// Modelo de Item de Assinatura
+model SubscriptionItem {
+  id                    String    @id @default(cuid())
+  subscription_id       String
+  product_id           String
+  quantity             Int
+  price_at_time        Float
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  subscription         Subscription @relation(fields: [subscription_id], references: [id])
+  product             Product    @relation(fields: [product_id], references: [id])
+}
+
+// Modelo de Membro da Equipe
+model TeamMember {
+  id                    String    @id @default(cuid())
+  team_id              String
+  user_id              String
+  role                 String
+  status               String    @default("active")
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  team                 Team      @relation(fields: [team_id], references: [id])
+}
