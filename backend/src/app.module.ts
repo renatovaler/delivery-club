@@ -11,6 +11,7 @@ import { ExpenseModule } from './expense/expense.module';
 import { NotificationModule } from './notification/notification.module';
 import { PlanModule } from './plan/plan.module';
 import { PlatformReportModule } from './platform-report/platform-report.module';
+import { ProcessedEventModule } from './processed-event/processed-event.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { PlatformReportModule } from './platform-report/platform-report.module';
     NotificationModule,
     PlanModule,
     PlatformReportModule,
+    ProcessedEventModule,
   ],
   controllers: [],
   providers: [],
