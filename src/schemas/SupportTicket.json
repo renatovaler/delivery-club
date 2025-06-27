@@ -1,0 +1,99 @@
+{
+  "name": "SupportTicket",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "ID do cliente que abriu o ticket"
+    },
+    "team_id": {
+      "type": "string",
+      "description": "ID da empresa (para suporte direto)"
+    },
+    "subscription_id": {
+      "type": "string",
+      "description": "ID da assinatura relacionada (opcional)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "support",
+        "complaint",
+        "suggestion",
+        "delivery_issue",
+        "product_issue",
+        "billing_issue"
+      ],
+      "description": "Tipo do ticket"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium",
+      "description": "Prioridade do ticket"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "waiting_customer",
+        "waiting_business",
+        "resolved",
+        "closed"
+      ],
+      "default": "open",
+      "description": "Status do ticket"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Assunto do ticket"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descrição detalhada do problema"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "ID do usuário responsável pelo atendimento"
+    },
+    "resolution": {
+      "type": "string",
+      "description": "Descrição da resolução (quando resolvido)"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e hora do fechamento"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Avaliação do atendimento (1-5 estrelas)"
+    },
+    "rating_comment": {
+      "type": "string",
+      "description": "Comentário sobre a avaliação"
+    }
+  },
+  "required": [
+    "customer_id",
+    "type",
+    "subject",
+    "description"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}
