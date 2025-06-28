@@ -16,9 +16,34 @@ model User {
   role          String    @default("user")
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
+
+  // Relacionamentos
+  notifications        Notification[]
+  reports_made        PlatformReport[]  @relation("ReporterUser")
+  reports_received    PlatformReport[]  @relation("ReportedUser")
+  tickets_created     SupportTicket[]   @relation("TicketCreator")
+  tickets_assigned    SupportTicket[]   @relation("TicketAssignee")
+  ticket_messages     TicketMessage[]
 }
 
-// Modelo de Equipe baseado no Team.json
+// Modelo de Plano
+model Plan {
+  id                    String    @id @default(cuid())
+  name                 String
+  description          String?
+  price                Float
+  max_subscriptions    Int
+  max_products         Int
+  max_services         Int       @default(0)
+  status               String    @default("active")
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  teams               Team[]
+}
+
+// Modelo de Equipe
 model Team {
   id                        String    @id @default(cuid())
   name                     String
@@ -38,13 +63,95 @@ model Team {
   updated_at               DateTime  @updatedAt
 
   // Relacionamentos
-  subscriptions           Subscription[]
-  team_members           TeamMember[]
-  delivery_areas         DeliveryArea[]
-  products              Product[]
+  plan                  Plan?     @relation(fields: [plan_id], references: [id])
+  subscriptions         Subscription[]
+  team_members         TeamMember[]
+  delivery_areas       DeliveryArea[]
+  products            Product[]
+  expenses            Expense[]
+  invoices            Invoice[]
+  reports_received    PlatformReport[]
+  support_tickets     SupportTicket[]
 }
 
-// Modelo de Assinatura baseado no Subscription.json
+// Modelo de Ticket de Suporte
+model SupportTicket {
+  id                    String    @id @default(cuid())
+  customer_id           String
+  team_id              String?
+  subscription_id       String?
+  type                 String
+  priority             String    @default("medium")
+  status               String    @default("open")
+  subject              String
+  description          String
+  assigned_to          String?
+  resolution           String?
+  closed_at            DateTime?
+  rating               Int?
+  rating_comment       String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  customer             User      @relation("TicketCreator", fields: [customer_id], references: [id])
+  team                Team?     @relation(fields: [team_id], references: [id])
+  subscription         Subscription? @relation(fields: [subscription_id], references: [id])
+  assignee             User?     @relation("TicketAssignee", fields: [assigned_to], references: [id])
+  messages            TicketMessage[]
+}
+
+// Modelo de Mensagem de Ticket
+model TicketMessage {
+  id                    String    @id @default(cuid())
+  ticket_id            String
+  sender_id            String
+  sender_type          String
+  message              String
+  attachment_url       String?
+  is_internal          Boolean   @default(false)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  ticket               SupportTicket @relation(fields: [ticket_id], references: [id])
+  sender               User      @relation(fields: [sender_id], references: [id])
+}
+
+// Modelo de Denúncia da Plataforma
+model PlatformReport {
+  id                    String    @id @default(cuid())
+  reporter_id           String
+  reported_team_id      String
+  reported_user_id      String?
+  category             String
+  severity             String    @default("medium")
+  title                String
+  description          String
+  evidence_urls        String[]
+  status               String    @default("pending")
+  admin_notes          String?
+  resolution           String?
+  resolved_at          DateTime?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  reporter             User      @relation("ReporterUser", fields: [reporter_id], references: [id])
+  reported_team        Team      @relation(fields: [reported_team_id], references: [id])
+  reported_user        User?     @relation("ReportedUser", fields: [reported_user_id], references: [id])
+}
+
+// Modelo de Evento Processado do Stripe
+model ProcessedEvent {
+  id                    String    @id @default(cuid())
+  stripe_event_id       String    @unique
+  processed_at          DateTime  @default(now())
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+}
+
+// Modelo de Assinatura
 model Subscription {
   id                    String    @id @default(cuid())
   customer_id           String
@@ -64,6 +171,8 @@ model Subscription {
   team                 Team      @relation(fields: [team_id], references: [id])
   delivery_area        DeliveryArea @relation(fields: [delivery_area_id], references: [id])
   subscription_items   SubscriptionItem[]
+  invoices            Invoice[]
+  support_tickets     SupportTicket[]
 }
 
 // Modelo de Área de Entrega
@@ -123,4 +232,57 @@ model TeamMember {
 
   // Relacionamentos
   team                 Team      @relation(fields: [team_id], references: [id])
+}
+
+// Modelo de Despesa
+model Expense {
+  id                    String    @id @default(cuid())
+  team_id              String
+  description          String
+  amount               Float
+  category             String
+  date                 DateTime
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  team                 Team      @relation(fields: [team_id], references: [id])
+}
+
+// Modelo de Fatura
+model Invoice {
+  id                    String    @id @default(cuid())
+  subscription_id       String
+  customer_id           String
+  team_id              String
+  amount               Float
+  billing_period_start  DateTime
+  billing_period_end    DateTime
+  due_date             DateTime
+  paid_date            DateTime?
+  status               String    @default("pending")
+  stripe_invoice_id    String?
+  description          String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  team                 Team        @relation(fields: [team_id], references: [id])
+  subscription         Subscription @relation(fields: [subscription_id], references: [id])
+}
+
+// Modelo de Notificação
+model Notification {
+  id                    String    @id @default(cuid())
+  user_id              String
+  title                String
+  message              String
+  status               String    @default("unread")
+  link_to              String?
+  icon                 String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  // Relacionamentos
+  user                 User      @relation(fields: [user_id], references: [id])
 }
