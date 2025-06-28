@@ -1,23 +1,43 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+
+enum SenderType {
+  CUSTOMER = 'customer',
+  BUSINESS = 'business',
+  ADMIN = 'admin'
+}
 
 export class CreateTicketMessageDto {
-  @ApiProperty()
   @IsString()
   ticket_id: string;
 
-  @ApiProperty()
+  @IsString()
+  sender_id: string;
+
+  @IsEnum(SenderType)
+  sender_type: SenderType;
+
   @IsString()
   message: string;
 
-  @ApiProperty()
-  @IsDateString()
-  sent_at: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
   @IsString()
-  sender_id?: string;
+  @IsOptional()
+  attachment_url?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  is_internal?: boolean;
 }
 
-export class UpdateTicketMessageDto extends CreateTicketMessageDto {}
+export class UpdateTicketMessageDto {
+  @IsString()
+  @IsOptional()
+  message?: string;
+
+  @IsString()
+  @IsOptional()
+  attachment_url?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  is_internal?: boolean;
+}

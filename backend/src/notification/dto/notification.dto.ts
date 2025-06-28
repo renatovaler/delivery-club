@@ -1,23 +1,38 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreateNotificationDto {
-  @ApiProperty()
   @IsString()
-  team_id: string;
+  user_id: string;
 
-  @ApiProperty()
+  @IsString()
+  title: string;
+
   @IsString()
   message: string;
 
-  @ApiProperty()
-  @IsDateString()
-  date: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
   @IsString()
-  status?: string;
+  @IsOptional()
+  status?: string = 'unread';
+
+  @IsString()
+  @IsOptional()
+  link_to?: string;
+
+  @IsString()
+  @IsOptional()
+  icon?: string;
 }
 
-export class UpdateNotificationDto extends CreateNotificationDto {}
+export class UpdateNotificationDto {
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @IsString()
+  @IsOptional()
+  link_to?: string;
+
+  @IsString()
+  @IsOptional()
+  icon?: string;
+}

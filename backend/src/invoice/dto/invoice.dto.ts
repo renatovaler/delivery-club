@@ -1,31 +1,58 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsNumber, IsDateString, IsOptional } from 'class-validator';
 
 export class CreateInvoiceDto {
-  @ApiProperty()
   @IsString()
-  team_id: string;
+  subscription_id: string;
 
-  @ApiProperty()
   @IsString()
   customer_id: string;
 
-  @ApiProperty()
+  @IsString()
+  team_id: string;
+
   @IsNumber()
   amount: number;
 
-  @ApiProperty()
   @IsDateString()
-  issue_date: string;
+  billing_period_start: string;
 
-  @ApiProperty()
+  @IsDateString()
+  billing_period_end: string;
+
   @IsDateString()
   due_date: string;
 
-  @ApiProperty({ required: false })
+  @IsDateString()
   @IsOptional()
+  paid_date?: string;
+
   @IsString()
-  status?: string;
+  @IsOptional()
+  stripe_invoice_id?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
-export class UpdateInvoiceDto extends CreateInvoiceDto {}
+export class UpdateInvoiceDto {
+  @IsNumber()
+  @IsOptional()
+  amount?: number;
+
+  @IsDateString()
+  @IsOptional()
+  paid_date?: string;
+
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @IsString()
+  @IsOptional()
+  stripe_invoice_id?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}

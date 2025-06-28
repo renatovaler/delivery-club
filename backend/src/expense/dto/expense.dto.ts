@@ -1,27 +1,32 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsNumber, IsDateString } from 'class-validator';
 
 export class CreateExpenseDto {
-  @ApiProperty()
   @IsString()
   team_id: string;
 
-  @ApiProperty()
   @IsString()
   description: string;
 
-  @ApiProperty()
   @IsNumber()
   amount: number;
 
-  @ApiProperty()
+  @IsString()
+  category: string;
+
   @IsDateString()
   date: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  status?: string;
 }
 
-export class UpdateExpenseDto extends CreateExpenseDto {}
+export class UpdateExpenseDto {
+  @IsString()
+  description?: string;
+
+  @IsNumber()
+  amount?: number;
+
+  @IsString()
+  category?: string;
+
+  @IsDateString()
+  date?: string;
+}

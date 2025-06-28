@@ -1,19 +1,57 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreatePlanDto {
-  @ApiProperty()
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  description?: string;
+
   @IsNumber()
   price: number;
 
-  @ApiProperty({ required: false })
+  @IsNumber()
+  max_subscriptions: number;
+
+  @IsNumber()
+  max_products: number;
+
+  @IsNumber()
   @IsOptional()
+  max_services?: number;
+
   @IsString()
-  description?: string;
+  @IsOptional()
+  status?: string = 'active';
 }
 
-export class UpdatePlanDto extends CreatePlanDto {}
+export class UpdatePlanDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsNumber()
+  @IsOptional()
+  price?: number;
+
+  @IsNumber()
+  @IsOptional()
+  max_subscriptions?: number;
+
+  @IsNumber()
+  @IsOptional()
+  max_products?: number;
+
+  @IsNumber()
+  @IsOptional()
+  max_services?: number;
+
+  @IsString()
+  @IsOptional()
+  status?: string;
+}
