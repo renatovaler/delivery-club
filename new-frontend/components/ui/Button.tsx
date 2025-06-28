@@ -1,21 +1,29 @@
-import React, { ReactNode, ButtonHTMLAttributes } from 'react';
+import React, { forwardRef } from 'react';
+import { cn } from '../../lib/lib';
+import { ButtonProps, ButtonRef } from './Button.types';
+import { LoadingSpinner } from './LoadingSpinner';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-  variant?: 'default' | 'outline';
-  className?: string;
-}
+const Button = forwardRef<ButtonRef, ButtonProps>(({
+  className,
+  variant = 'default',
+  size = 'default',
+  isLoading = false,
+  fullWidth = false,
+  leftIcon,
+  rightIcon,
+  children,
+  disabled,
+  ...props
+}, ref) => {
+  const baseStyles = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ring-offset-background';
 
-export function Button({ children, variant = 'default', className = '', ...props }: ButtonProps) {
-  const baseClasses = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
-  const variantClasses =
-    variant === 'outline'
-      ? 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500'
-      : 'bg-gray-800 text-white hover:bg-gray-900 focus:ring-blue-500';
+  const variants = {
+    default: 'bg-slate-900 text-slate-50 hover:bg-slate-900/90',
+    destructive: 'bg-red-500 text-slate-50 hover:bg-red-500/90',
+    outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-100/80',
+    ghost: 'hover:bg-slate-100 hover:text-slate-900',
+    link: 'text-slate-900 underline-offset-4 hover:underline',
+  };
 
-  return (
-    <button className={`${baseClasses} ${variantClasses} ${className}`} {...props}>
-      {children}
-    </button>
-  );
-}
+  const sizes = {
