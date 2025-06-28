@@ -41,7 +41,7 @@ export class CreatePlatformReportDto {
 
   @IsEnum(ReportSeverity)
   @IsOptional()
-  severity?: ReportSeverity = 'medium';
+  severity?: ReportSeverity;
 
   @IsString()
   title: string;

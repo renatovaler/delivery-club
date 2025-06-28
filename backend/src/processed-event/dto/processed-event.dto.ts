@@ -1,19 +1,20 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateProcessedEventDto {
-  @ApiProperty()
   @IsString()
-  event_type: string;
+  stripe_event_id: string;
 
-  @ApiProperty()
   @IsDateString()
-  event_date: string;
-
-  @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
-  details?: string;
+  processed_at?: string;
 }
 
-export class UpdateProcessedEventDto extends CreateProcessedEventDto {}
+export class UpdateProcessedEventDto {
+  @IsString()
+  @IsOptional()
+  stripe_event_id?: string;
+
+  @IsDateString()
+  @IsOptional()
+  processed_at?: string;
+}

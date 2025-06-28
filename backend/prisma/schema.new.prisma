@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Histórico de Alterações da Equipe
+model TeamChangeHistory {
+  id          String   @id @default(cuid())
+  team_id    String
+  change_type String
+  old_data   Json
+  new_data   Json
+  changed_by String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relacionamentos
+  team       Team     @relation(fields: [team_id], references: [id])
+}
+
+// Modelo de Histórico de Assinaturas da Equipe
+model TeamSubscriptionHistory {
+  id          String   @id @default(cuid())
+  team_id    String
+  subscription_id String
+  change_type String
+  old_data   Json
+  new_data   Json
+  changed_by String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relacionamentos
+  team       Team     @relation(fields: [team_id], references: [id])
+  subscription Subscription @relation(fields: [subscription_id], references: [id])
+}

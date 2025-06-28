@@ -1,23 +1,39 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsObject, IsOptional } from 'class-validator';
 
 export class CreateTeamSubscriptionHistoryDto {
-  @ApiProperty()
   @IsString()
   team_id: string;
 
-  @ApiProperty()
   @IsString()
   subscription_id: string;
 
-  @ApiProperty()
-  @IsDateString()
-  change_date: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
   @IsString()
-  details?: string;
+  change_type: string;
+
+  @IsObject()
+  old_data: object;
+
+  @IsObject()
+  new_data: object;
+
+  @IsString()
+  changed_by: string;
 }
 
-export class UpdateTeamSubscriptionHistoryDto extends CreateTeamSubscriptionHistoryDto {}
+export class UpdateTeamSubscriptionHistoryDto {
+  @IsString()
+  @IsOptional()
+  change_type?: string;
+
+  @IsObject()
+  @IsOptional()
+  old_data?: object;
+
+  @IsObject()
+  @IsOptional()
+  new_data?: object;
+
+  @IsString()
+  @IsOptional()
+  changed_by?: string;
+}
