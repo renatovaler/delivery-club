@@ -1,16 +1,22 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { PropsWithChildren } from 'react';
+import { useAuth } from '../lib/auth';
 import { ToastProvider } from '../components/ui/use-toast';
+import { LoadingScreen } from '../components/ui/LoadingSpinner';
 
-interface ProvidersProps {
-  children: ReactNode;
-}
+export function Providers({ children }: PropsWithChildren) {
+  const { isLoading } = useAuth();
 
-export function Providers({ children }: ProvidersProps) {
+  if (isLoading) {
+    return <LoadingScreen message="Inicializando aplicação..." />;
+  }
+
   return (
     <ToastProvider>
       {children}
     </ToastProvider>
   );
 }
+
+export default Providers;

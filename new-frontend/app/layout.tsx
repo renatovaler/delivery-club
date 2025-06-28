@@ -1,18 +1,22 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import { Providers } from './providers';
+import { Navigation } from '../components/Navigation';
 
 export const metadata = {
-  title: 'Novo Frontend',
-  description: 'Frontend recriado com Next.js e Tailwind CSS',
+  title: 'Painel do Cliente',
+  description: 'Gerencie suas assinaturas e serviços',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-white text-black min-h-screen">
+      <body className="bg-slate-50 text-slate-900 min-h-screen">
         <Providers>
-          <main className="container mx-auto p-4">{children}</main>
+          <Navigation />
+          <main className="container mx-auto px-4 py-8">
+            {children}
+          </main>
         </Providers>
       </body>
     </html>
