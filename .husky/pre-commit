@@ -1,0 +1,46 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Verificando código..."
+
+# Verifica se há arquivos staged
+if git diff --cached --quiet; then
+  echo "❌ Nenhum arquivo para commit"
+  exit 1
+fi
+
+# Frontend checks
+if [ -d "new-frontend" ]; then
+  cd new-frontend
+  echo "📝 Verificando tipos do frontend..."
+  npm run type-check || exit 1
+  
+  echo "🎨 Formatando código do frontend..."
+  npm run format || exit 1
+  
+  echo "🔍 Executando lint do frontend..."
+  npm run lint || exit 1
+  
+  cd ..
+fi
+
+# Backend checks
+if [ -d "backend" ]; then
+  cd backend
+  echo "📝 Verificando tipos do backend..."
+  npm run type-check || exit 1
+  
+  echo "🎨 Formatando código do backend..."
+  npm run format || exit 1
+  
+  echo "🔍 Executando lint do backend..."
+  npm run lint || exit 1
+  
+  cd ..
+fi
+
+# Verifica mensagem do commit
+echo "✍️ Verificando mensagem do commit..."
+npx --no -- commitlint --edit "$1" || exit 1
+
+echo "✅ Código verificado com sucesso!"
