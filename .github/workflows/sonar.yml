@@ -1,0 +1,122 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  sonarcloud:
+    name: 🔍 SonarCloud
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 💾 Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: 💾 Cache npm packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 📥 Install Dependencies
+        run: |
+          npm ci
+          cd new-frontend && npm ci
+          cd ../backend && npm ci
+
+      - name: 🧪 Run Tests with Coverage
+        run: |
+          cd new-frontend && npm run test:coverage
+          cd ../backend && npm run test:coverage
+
+      - name: 🔍 SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+            -Dsonar.pullrequest.branch=${{ github.head_ref }}
+            -Dsonar.pullrequest.base=${{ github.base_ref }}
+
+      - name: 📊 SonarQube Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          scanMetadataReportFile: .scannerwork/report-task.txt
+
+      - name: 📧 Notify on Quality Gate Failure
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: danger
+          SLACK_MESSAGE: '❌ Quality Gate falhou na análise do SonarCloud!'
+          SLACK_TITLE: SonarCloud Analysis
+          SLACK_USERNAME: SonarCloud Bot
+          SLACK_ICON_EMOJI: ':warning:'
+
+      - name: 📝 Create Issue on Quality Gate Failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = '.scannerwork/report-task.txt';
+            
+            if (fs.existsSync(reportPath)) {
+              const report = fs.readFileSync(reportPath, 'utf8');
+              const dashboardUrl = report.match(/dashboardUrl=(.*)/)[1];
+              
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '❌ Quality Gate Falhou na Análise do SonarCloud',
+                body: `
+                  ## Falha no Quality Gate
+                  
+                  A análise do SonarCloud falhou no Quality Gate.
+                  
+                  ### Links Importantes
+                  - [Dashboard do SonarCloud](${dashboardUrl})
+                  - [Execução do Workflow](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+                  
+                  Por favor, revise os problemas encontrados e faça as correções necessárias.
+                `,
+                labels: ['quality-gate', 'high-priority']
+              });
+            }
+
+      - name: 📊 Upload Analysis Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: sonar-report
+          path: .scannerwork/
+          retention-days: 30
