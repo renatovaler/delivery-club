@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '../../components/ui/use-toast';
 import { Button } from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import apiClient from '../../lib/apiClient';
 
 export default function ForgotPasswordPage() {
@@ -95,7 +96,7 @@ export default function ForgotPasswordPage() {
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                <LoadingSpinner size="sm" light />
                 <span className="ml-2">Enviando...</span>
               </div>
             ) : (

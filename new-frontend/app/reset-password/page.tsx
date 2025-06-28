@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '../../components/ui/use-toast';
 import { Button } from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import apiClient from '../../lib/apiClient';
 
 export default function ResetPasswordPage() {
@@ -136,7 +137,7 @@ export default function ResetPasswordPage() {
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                <LoadingSpinner size="sm" light />
                 <span className="ml-2">Redefinindo senha...</span>
               </div>
             ) : (

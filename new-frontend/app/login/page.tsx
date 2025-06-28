@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../../lib/auth';
 import { useToast } from '../../components/ui/use-toast';
-import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { Button } from '../../components/ui/Button';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -71,7 +74,16 @@ export default function LoginPage() {
             />
           </div>
 
-          <button
+          <div className="flex items-center justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-700"
+            >
+              Esqueceu sua senha?
+            </Link>
+          </div>
+
+          <Button
             type="submit"
             disabled={isLoading}
             className={`w-full py-2 px-4 rounded-md text-white font-medium ${
@@ -88,8 +100,15 @@ export default function LoginPage() {
             ) : (
               'Entrar'
             )}
-          </button>
+          </Button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-slate-600">
+          Não tem uma conta?{' '}
+          <Link href="/register" className="text-blue-600 hover:text-blue-700 font-medium">
+            Criar conta
+          </Link>
+        </p>
       </div>
     </div>
   );
