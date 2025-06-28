@@ -1,0 +1,117 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":semanticCommits",
+    ":semanticPrefixFix",
+    ":ignoreUnstable",
+    ":prHourlyLimit2",
+    ":prConcurrentLimit10",
+    "group:monorepos",
+    "group:recommended",
+    "workarounds:all"
+  ],
+  "timezone": "America/Sao_Paulo",
+  "schedule": ["after 9am and before 5pm on Monday"],
+  "labels": ["dependencies"],
+  "baseBranches": ["develop"],
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "matchPaths": ["new-frontend/**"],
+      "labels": ["frontend", "dependencies"],
+      "groupName": "frontend-dependencies",
+      "reviewers": ["mantenedor-frontend"],
+      "assignees": ["mantenedor-frontend"]
+    },
+    {
+      "matchPaths": ["backend/**"],
+      "labels": ["backend", "dependencies"],
+      "groupName": "backend-dependencies",
+      "reviewers": ["mantenedor-backend"],
+      "assignees": ["mantenedor-backend"]
+    },
+    {
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "type-definitions",
+      "labels": ["types"]
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "dev-dependencies",
+      "labels": ["dev-deps"]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "labels": ["UPDATE-MAJOR"]
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "labels": ["UPDATE-MINOR"]
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "labels": ["UPDATE-PATCH"]
+    },
+    {
+      "matchPackagePatterns": ["^eslint"],
+      "groupName": "eslint",
+      "labels": ["linting"]
+    },
+    {
+      "matchPackagePatterns": ["^@typescript-eslint/"],
+      "groupName": "typescript-eslint",
+      "labels": ["typescript", "linting"]
+    },
+    {
+      "matchPackagePatterns": ["^prettier"],
+      "groupName": "prettier",
+      "labels": ["formatting"]
+    },
+    {
+      "matchPackageNames": ["typescript"],
+      "labels": ["typescript"]
+    },
+    {
+      "matchPackagePatterns": ["^@nestjs/"],
+      "groupName": "nestjs",
+      "labels": ["nestjs"]
+    },
+    {
+      "matchPackagePatterns": ["^next", "^@next/"],
+      "groupName": "nextjs",
+      "labels": ["nextjs"]
+    },
+    {
+      "matchPackagePatterns": ["^tailwindcss", "^@tailwindcss/"],
+      "groupName": "tailwindcss",
+      "labels": ["tailwindcss"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["mantenedor-seguranca"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on Monday"]
+  },
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "📦 Dependency Dashboard",
+  "dependencyDashboardLabels": ["dependencies", "dashboard"],
+  "major": {
+    "dependencyDashboardApproval": true
+  },
+  "prCreation": "not-pending",
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 2,
+  "rebaseWhen": "behind-base-branch",
+  "reviewers": ["equipe-tech"],
+  "assignees": ["equipe-tech"],
+  "commitMessagePrefix": "chore(deps):",
+  "commitBody": "Atualização automática de dependências pelo Renovate",
+  "platformCommit": true,
+  "git-submodules": {
+    "enabled": true
+  }
+}

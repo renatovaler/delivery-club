@@ -1,0 +1,111 @@
+version: 2
+updates:
+  # Frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/new-frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    reviewers:
+      - "mantenedor-frontend"
+    assignees:
+      - "mantenedor-frontend"
+    groups:
+      frontend-deps:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+
+  # Backend dependencies
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    reviewers:
+      - "mantenedor-backend"
+    assignees:
+      - "mantenedor-backend"
+    groups:
+      backend-deps:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    reviewers:
+      - "mantenedor-devops"
+    assignees:
+      - "mantenedor-devops"
+    open-pull-requests-limit: 5
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      prefix-development: "ci"
+      include: "scope"
+    reviewers:
+      - "mantenedor-devops"
+    assignees:
+      - "mantenedor-devops"
+    open-pull-requests-limit: 5
+
+# Configurações globais
+registries:
+  npm-github:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.GITHUB_TOKEN}}
+  dockerhub:
+    type: docker-registry
+    url: https://registry.hub.docker.com
+    username: ${{secrets.DOCKER_USERNAME}}
+    password: ${{secrets.DOCKER_PASSWORD}}

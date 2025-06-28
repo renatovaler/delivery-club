@@ -1,0 +1,112 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  schedule:
+    - cron: '30 1 * * 0' # Executa às 01:30 UTC todo domingo
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'typescript' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-and-quality
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd new-frontend && npm ci
+        cd ../backend && npm ci
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
+      if: success() || failure()
+      with:
+        sarif_file: results.sarif
+
+    - name: Notify on High Severity Findings
+      if: ${{ failure() }}
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_COLOR: danger
+        SLACK_MESSAGE: '🚨 Encontradas vulnerabilidades de alta severidade na análise CodeQL!'
+        SLACK_TITLE: CodeQL Security Analysis
+        SLACK_USERNAME: CodeQL Bot
+        SLACK_ICON_EMOJI: ':shield:'
+
+    - name: Create Issue for High Severity Findings
+      if: ${{ failure() }}
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const sarif = JSON.parse(fs.readFileSync('results.sarif', 'utf8'));
+          
+          const highSeverityResults = sarif.runs[0].results.filter(
+            result => result.level === 'error'
+          );
+          
+          if (highSeverityResults.length > 0) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Vulnerabilidades de Alta Severidade Detectadas',
+              body: `
+                ## Análise de Segurança CodeQL
+                
+                Foram encontradas ${highSeverityResults.length} vulnerabilidades de alta severidade.
+                
+                ### Detalhes:
+                ${highSeverityResults.map(result => `
+                - **${result.ruleId}**
+                  - Localização: ${result.locations[0].physicalLocation.artifactLocation.uri}
+                  - Mensagem: ${result.message.text}
+                `).join('\n')}
+                
+                Por favor, revise e corrija estas vulnerabilidades o mais rápido possível.
+              `,
+              labels: ['security', 'high-priority']
+            });
+          }
+
+    - name: Security Scan Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-scan-report
+        path: results.sarif
+        retention-days: 30
