@@ -1,4 +1,4 @@
-import { IsString, IsObject } from 'class-validator';
+import { IsString, IsObject, IsOptional } from 'class-validator';
 
 export class CreateTeamChangeHistoryDto {
   @IsString()
@@ -19,14 +19,18 @@ export class CreateTeamChangeHistoryDto {
 
 export class UpdateTeamChangeHistoryDto {
   @IsString()
+  @IsOptional()
   change_type?: string;
 
   @IsObject()
+  @IsOptional()
   old_data?: object;
 
   @IsObject()
+  @IsOptional()
   new_data?: object;
 
   @IsString()
+  @IsOptional()
   changed_by?: string;
 }
