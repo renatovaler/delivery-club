@@ -1,4 +1,13 @@
+
 import apiClient from './apiClient';
+import type {
+  Invoice,
+  Product,
+  SupportTicket,
+  PlatformReport,
+  PriceUpdate,
+  Expense
+} from './api-extended';
 
 // Interfaces
 export interface User {
@@ -12,7 +21,7 @@ export interface Subscription {
   customer_id: string;
   team_id: string;
   status: 'active' | 'pending_payment' | 'cancelled';
-  weekly_price: string;
+  weekly_price: number;
   start_date: string;
   delivery_address: {
     street: string;
@@ -34,15 +43,21 @@ export interface SubscriptionItem {
 export interface Team {
   id: string;
   name: string;
+  subscription_status?: string;
+  created_date?: string;
 }
 
 // API Functions
 export const UserAPI = {
   me: () => apiClient.get<User>('/users/me').then(res => res.data),
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<User[]>('/users', { params: { orderBy, limit } }).then(res => res.data),
 };
 
 export const SubscriptionAPI = {
   filter: (params: any) => apiClient.get<Subscription[]>('/subscriptions', { params }).then(res => res.data),
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<Subscription[]>('/subscriptions', { params: { orderBy, limit } }).then(res => res.data),
 };
 
 export const SubscriptionItemAPI = {
@@ -50,5 +65,37 @@ export const SubscriptionItemAPI = {
 };
 
 export const TeamAPI = {
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<Team[]>('/teams', { params: { orderBy, limit } }).then(res => res.data),
   get: (id: string) => apiClient.get<Team>(`/teams/${id}`).then(res => res.data),
+};
+
+export const InvoiceAPI = {
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<Invoice[]>('/invoices', { params: { orderBy, limit } }).then(res => res.data),
+};
+
+export const ProductAPI = {
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<Product[]>('/products', { params: { orderBy, limit } }).then(res => res.data),
+};
+
+export const SupportTicketAPI = {
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<SupportTicket[]>('/support-tickets', { params: { orderBy, limit } }).then(res => res.data),
+};
+
+export const PlatformReportAPI = {
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<PlatformReport[]>('/platform-reports', { params: { orderBy, limit } }).then(res => res.data),
+};
+
+export const PriceUpdateAPI = {
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<PriceUpdate[]>('/price-updates', { params: { orderBy, limit } }).then(res => res.data),
+};
+
+export const ExpenseAPI = {
+  list: (orderBy: string, limit: number) =>
+    apiClient.get<Expense[]>('/expenses', { params: { orderBy, limit } }).then(res => res.data),
 };
