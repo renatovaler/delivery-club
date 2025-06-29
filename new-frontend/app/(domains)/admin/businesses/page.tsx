@@ -34,7 +34,7 @@ interface OwnersMap {
   [key: string]: User;
 }
 
-export default function AdminBusinesses(): void {
+export default function AdminBusinesses(): JSX.Element {
   const [businesses, setBusinesses] = useState<Team[]>([]);
   const [owners, setOwners] = useState<OwnersMap>({});
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -87,7 +87,7 @@ export default function AdminBusinesses(): void {
   };
 
   const applyFilters = (): void => {
-    let filtered = businesses.filter((business) => {
+    const filtered = businesses.filter((business) => {
       const matchesSearch =
         business.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         (business.cnpj_cpf && business.cnpj_cpf.includes(filters.search)) ||
@@ -129,8 +129,8 @@ export default function AdminBusinesses(): void {
     return (
       <div className="w-full p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 w-1/3 rounded bg-slate-200"></div>
-          <div className="h-64 rounded-xl bg-slate-200"></div>
+          <div className="h-8 w-1/3 rounded bg-slate-200" />
+          <div className="h-64 rounded-xl bg-slate-200" />
         </div>
       </div>
     );

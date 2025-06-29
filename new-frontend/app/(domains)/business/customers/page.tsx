@@ -18,7 +18,7 @@ export default function CustomersPage(): JSX.Element | null {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="border-primary h-32 w-32 animate-spin rounded-full border-b-2"></div>
+        <div className="border-primary h-32 w-32 animate-spin rounded-full border-b-2" />
       </div>
     );
   }

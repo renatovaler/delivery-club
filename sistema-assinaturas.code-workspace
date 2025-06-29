@@ -90,8 +90,8 @@
     "git.autofetch": true,
 
     // Terminal
-    "terminal.integrated.defaultProfile.linux": "zsh",
-    "terminal.integrated.defaultProfile.osx": "zsh",
+    "terminal.integrated.defaultProfile.linux": "Git Bash",
+    "terminal.integrated.defaultProfile.osx": "Git Bash",
     "terminal.integrated.defaultProfile.windows": "Git Bash",
 
     // Docker

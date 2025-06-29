@@ -8,12 +8,8 @@ interface DropdownMenuProps {
   className?: string;
 }
 
-export function DropdownMenu(): void {
-  return (
-    <div className={cn('relative inline-block text-left', className)}>
-      {children}
-    </div>
-  );
+export function DropdownMenu({ children, className }: DropdownMenuProps): JSX.Element {
+  return <div className={cn('relative inline-block text-left', className)}>{children}</div>;
 }
 
 interface DropdownMenuTriggerProps {
@@ -21,16 +17,16 @@ interface DropdownMenuTriggerProps {
   asChild?: boolean;
 }
 
-export function DropdownMenuTrigger(): void {
-  if (asChild) { {
+export function DropdownMenuTrigger({ children, asChild }: DropdownMenuTriggerProps): JSX.Element {
+  if (asChild) {
     return <>{children}</>;
   }
   return (
     <button
-      type='button'
-      className='inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none'
-      aria-haspopup='true'
-      aria-expanded='false'
+      type="button"
+      className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none"
+      aria-haspopup="true"
+      aria-expanded="false"
     >
       {children}
     </button>
@@ -43,7 +39,11 @@ interface DropdownMenuContentProps {
   className?: string;
 }
 
-export function DropdownMenuContent(): void {
+export function DropdownMenuContent({
+  children,
+  align,
+  className,
+}: DropdownMenuContentProps): JSX.Element {
   return (
     <div
       className={cn(
@@ -51,7 +51,7 @@ export function DropdownMenuContent(): void {
         align === 'end' ? 'right-0' : 'left-0',
         className
       )}
-      role='menu'
+      role="menu"
     >
       {children}
     </div>
@@ -64,14 +64,18 @@ interface DropdownMenuItemProps {
   className?: string;
 }
 
-export function DropdownMenuItem(): void {
+export function DropdownMenuItem({
+  children,
+  onClick,
+  className,
+}: DropdownMenuItemProps): JSX.Element {
   return (
     <div
       className={cn(
-        'block px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100',
+        'block cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100',
         className
       )}
-      role='menuitem'
+      role="menuitem"
       tabIndex={-1}
       onClick={onClick}
     >

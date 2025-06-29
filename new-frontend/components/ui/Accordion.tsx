@@ -50,8 +50,8 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
   ({ className, type = 'single', collapsible = false, children, ...props }, ref) => {
     const [openItems, setOpenItems] = React.useState<string[]>([]);
 
-    const toggleItem = (): void => {
-      if (type === 'single') { {
+    const toggleItem = (value: string): void => {
+      if (type === 'single') {
         setOpenItems((prev) => (prev.includes(value) ? (collapsible ? [] : prev) : [value]));
       } else {
         setOpenItems((prev) =>

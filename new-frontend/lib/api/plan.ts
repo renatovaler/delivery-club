@@ -128,7 +128,7 @@ export const TeamMemberAPI = {
     apiClient.post<TeamMember>(`/teams/${teamId}/invite`, { email, role }).then((res: any) => res.data),
 
   acceptInvite: (inviteToken: string) =>
-    apiClient.post<TeamMember>(`/team-members/accept-invite`, { token: inviteToken }).then((res: any) => res.data),
+    apiClient.post<TeamMember>('/team-members/accept-invite', { token: inviteToken }).then((res: any) => res.data),
 };
 
 export const TeamSubscriptionHistoryAPI = {

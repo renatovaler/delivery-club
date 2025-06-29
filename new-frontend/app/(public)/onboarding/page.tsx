@@ -64,7 +64,7 @@ export default function OnboardingPage(): JSX.Element {
           <div
             className="h-2 rounded-full bg-blue-600 transition-all duration-300"
             style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-          ></div>
+           />
         </div>
 
         <div className="card">

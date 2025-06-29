@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, ReactNode, useContext, useState } from 'react';
 
 interface Toast {
   id: number;
@@ -13,34 +13,38 @@ interface ToastContextType {
   removeToast: (id: number) => void;
 }
 
+interface ToastProviderProps {
+  children: ReactNode;
+}
+
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export const ToastProvider = (): void => {
+export const ToastProvider = ({ children }: ToastProviderProps): JSX.Element => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = (): void => {
+  const toast = (newToast: Omit<Toast, 'id'>): void => {
     const id = Date.now();
-    setToasts((prev) => [...prev, { id, ...toast }]);
+    setToasts((prev) => [...prev, { ...newToast, id }]);
     setTimeout(() => removeToast(id), 5000);
   };
 
-  const removeToast = (): void => {
+  const removeToast = (id: number): void => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
   return (
     <ToastContext.Provider value={{ toasts, toast, removeToast }}>
       {children}
-      <div className='fixed bottom-4 right-4 space-y-2 z-50'>
+      <div className="fixed bottom-4 right-4 z-50 space-y-2">
         {toasts.map(({ id, title, description, variant }) => (
           <div
             key={id}
-            className={`max-w-sm w-full bg-white shadow-lg rounded-md p-4 border ${
+            className={`w-full max-w-sm rounded-md border bg-white p-4 shadow-lg ${
               variant === 'destructive' ? 'border-red-500 bg-red-50' : 'border-gray-300'
             }`}
           >
-            <strong className='block font-semibold'>{title}</strong>
-            {description && <p className='text-sm'>{description}</p>}
+            <strong className="block font-semibold">{title}</strong>
+            {description && <p className="text-sm">{description}</p>}
           </div>
         ))}
       </div>
@@ -48,9 +52,9 @@ export const ToastProvider = (): void => {
   );
 };
 
-export const useToast = (): void => {
+export const useToast = (): ToastContextType => {
   const context = useContext(ToastContext);
-  if (!context) { {
+  if (!context) {
     throw new Error('useToast must be used within a ToastProvider');
   }
   return context;

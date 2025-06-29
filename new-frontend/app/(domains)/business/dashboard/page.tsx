@@ -163,7 +163,7 @@ export default function BusinessDashboard(): JSX.Element {
   if (loading || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="border-primary h-32 w-32 animate-spin rounded-full border-b-2"></div>
+        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
@@ -195,44 +195,44 @@ export default function BusinessDashboard(): JSX.Element {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-            <Users className="text-muted-foreground h-4 w-4" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-            <p className="text-muted-foreground text-xs">+12% em relação ao mês passado</p>
+            <p className="text-xs text-muted-foreground">+12% em relação ao mês passado</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Assinaturas Ativas</CardTitle>
-            <TrendingUp className="text-muted-foreground h-4 w-4" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeSubscriptions}</div>
-            <p className="text-muted-foreground text-xs">+8% em relação ao mês passado</p>
+            <p className="text-xs text-muted-foreground">+8% em relação ao mês passado</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita Mensal</CardTitle>
-            <DollarSign className="text-muted-foreground h-4 w-4" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(stats.monthlyRevenue)}</div>
-            <p className="text-muted-foreground text-xs">+15% em relação ao mês passado</p>
+            <p className="text-xs text-muted-foreground">+15% em relação ao mês passado</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Produtos Ativos</CardTitle>
-            <Package className="text-muted-foreground h-4 w-4" />
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-muted-foreground text-xs">+3 novos produtos este mês</p>
+            <p className="text-xs text-muted-foreground">+3 novos produtos este mês</p>
           </CardContent>
         </Card>
       </div>
