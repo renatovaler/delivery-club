@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import apiClient from '../lib/apiClient';
 
@@ -31,10 +33,10 @@ export default function HomePage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Equipes</h1>
+      <h1 className="mb-4 text-2xl font-bold">Equipes</h1>
       <ul className="space-y-2">
         {teams.map((team) => (
-          <li key={team.id} className="p-4 border rounded shadow-sm hover:shadow-md transition">
+          <li key={team.id} className="rounded border p-4 shadow-sm transition hover:shadow-md">
             <h2 className="text-xl font-semibold">{team.name}</h2>
             <p className="text-gray-600">Categoria: {team.category}</p>
           </li>
