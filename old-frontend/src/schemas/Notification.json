@@ -1,0 +1,40 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usuário que receberá a notificação"
+    },
+    "title": {
+      "type": "string",
+      "description": "Título da notificação"
+    },
+    "message": {
+      "type": "string",
+      "description": "Corpo da mensagem da notificação"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "unread",
+        "read"
+      ],
+      "default": "unread",
+      "description": "Status da notificação"
+    },
+    "link_to": {
+      "type": "string",
+      "description": "URL opcional para onde a notificação deve levar ao ser clicada"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Nome de um ícone da biblioteca Lucide para ser exibido"
+    }
+  },
+  "required": [
+    "user_id",
+    "title",
+    "message"
+  ]
+}

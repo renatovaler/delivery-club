@@ -1,0 +1,51 @@
+{
+  "name": "DeliveryArea",
+  "type": "object",
+  "properties": {
+    "team_id": {
+      "type": "string",
+      "description": "ID da empresa"
+    },
+    "state": {
+      "type": "string",
+      "description": "Estado"
+    },
+    "city": {
+      "type": "string",
+      "description": "Cidade"
+    },
+    "neighborhood": {
+      "type": "string",
+      "description": "Bairro"
+    },
+    "condominium": {
+      "type": "string",
+      "description": "Condomínio (se aplicável)",
+      "default": ""
+    },
+    "delivery_fee": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Taxa de entrega para esta área"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observações sobre a área"
+    }
+  },
+  "required": [
+    "team_id",
+    "state",
+    "city",
+    "neighborhood",
+    "delivery_fee"
+  ]
+}

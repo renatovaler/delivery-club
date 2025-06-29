@@ -1,0 +1,81 @@
+{
+  "name": "SubscriptionItem",
+  "type": "object",
+  "properties": {
+    "subscription_id": {
+      "type": "string",
+      "description": "ID da assinatura principal"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "ID do produto (se for um produto)",
+      "nullable": true
+    },
+    "service_id": {
+      "type": "string",
+      "description": "ID do serviço (se for um serviço)",
+      "nullable": true
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "bi-weekly",
+        "monthly"
+      ],
+      "default": "weekly",
+      "description": "Frequência da entrega (semanal, quinzenal, mensal)"
+    },
+    "delivery_days": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Dias da semana para entrega (usado se frequency='weekly')"
+    },
+    "biweekly_delivery_day": {
+      "type": "string",
+      "enum": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday"
+      ],
+      "description": "Dia da semana para entrega quinzenal (usado se frequency='bi-weekly')"
+    },
+    "monthly_delivery_day": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 28,
+      "description": "Dia do mês para entrega mensal (usado se frequency='monthly')"
+    },
+    "quantity_per_delivery": {
+      "type": "number",
+      "description": "Quantidade do produto por entrega / sessões do serviço"
+    },
+    "unit_price": {
+      "type": "number",
+      "description": "Preço unitário do item no momento da assinatura"
+    },
+    "monthly_subtotal": {
+      "type": "number",
+      "description": "Subtotal mensal para este item (calculado com base na frequência de entrega)"
+    }
+  },
+  "required": [
+    "subscription_id",
+    "quantity_per_delivery",
+    "unit_price"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

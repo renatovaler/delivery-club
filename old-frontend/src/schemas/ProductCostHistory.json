@@ -1,0 +1,32 @@
+{
+  "name": "ProductCostHistory",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "ID do produto ao qual este custo se refere"
+    },
+    "cost_per_unit": {
+      "type": "number",
+      "description": "O custo do produto por unidade"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "A data a partir da qual este custo é válido"
+    }
+  },
+  "required": [
+    "product_id",
+    "cost_per_unit",
+    "effective_date"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "name": "PlatformReport",
+  "type": "object",
+  "properties": {
+    "reporter_id": {
+      "type": "string",
+      "description": "ID do usuário que fez a denúncia"
+    },
+    "reported_team_id": {
+      "type": "string",
+      "description": "ID da empresa denunciada"
+    },
+    "reported_user_id": {
+      "type": "string",
+      "description": "ID do usuário denunciado (opcional)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "fraud",
+        "poor_service",
+        "product_quality",
+        "delivery_issues",
+        "overcharging",
+        "harassment",
+        "spam",
+        "other"
+      ],
+      "description": "Categoria da denúncia"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium",
+      "description": "Gravidade da denúncia"
+    },
+    "title": {
+      "type": "string",
+      "description": "Título da denúncia"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descrição detalhada da denúncia"
+    },
+    "evidence_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs de evidências (fotos, documentos, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "investigating",
+        "resolved",
+        "dismissed"
+      ],
+      "default": "pending",
+      "description": "Status da investigação"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notas internas dos administradores"
+    },
+    "resolution": {
+      "type": "string",
+      "description": "Descrição da resolução"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de resolução"
+    }
+  },
+  "required": [
+    "reporter_id",
+    "category",
+    "title",
+    "description"
+  ]
+}

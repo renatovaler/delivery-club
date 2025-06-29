@@ -1,57 +1,110 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
-const publicPaths = [
-  '/welcome',
+// Definir rotas protegidas por tipo de usuário
+const protectedRoutes = {
+  system_admin: [
+    '/admin-dashboard',
+    '/admin-businesses',
+    '/admin-users',
+    '/admin-plans',
+    '/admin-reports',
+    '/admin-system-tests',
+    '/admin-user-details'
+  ],
+  business_owner: [
+    '/business-dashboard',
+    '/products',
+    '/services',
+    '/delivery-areas',
+    '/team-management',
+    '/business-settings'
+  ],
+  customer: [
+    '/customer-dashboard',
+    '/my-subscriptions',
+    '/payment-history'
+  ],
+  common: [
+    '/support',
+    '/profile'
+  ]
+};
+
+// Rotas públicas que não precisam de autenticação
+const publicRoutes = [
   '/login',
   '/register',
   '/forgot-password',
-  '/reset-password'
+  '/reset-password',
+  '/welcome',
+  '/'
 ];
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth-storage');
   const { pathname } = request.nextUrl;
 
-  // Redirecionar a raiz para welcome ou dashboard
-  if (pathname === '/') {
-    if (token) {
-      return NextResponse.redirect(new URL('/customer-dashboard', request.url));
-    }
-    return NextResponse.redirect(new URL('/welcome', request.url));
-  }
-
   // Permitir acesso a rotas públicas
-  if (publicPaths.some(path => pathname.startsWith(path))) {
-    // Se já estiver autenticado, redirecionar para o dashboard
-    // Exceto para a página de welcome que pode ser vista mesmo autenticado
-    if (token && pathname !== '/welcome') {
-      return NextResponse.redirect(new URL('/customer-dashboard', request.url));
-    }
+  if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // Verificar autenticação para rotas protegidas
-  if (!token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
+  // Verificar se há token de autenticação
+  const authToken = request.cookies.get('auth-token')?.value;
+
+  if (!authToken) {
+    // Redirecionar para login se não estiver autenticado
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  return NextResponse.next();
+  try {
+    // Decodificar o token para obter informações do usuário
+    // Em produção, você deve validar o token com sua API
+    const userInfo = JSON.parse(atob(authToken.split('.')[1]));
+    const userType = userInfo.user_type;
+
+    // Verificar se o usuário tem permissão para acessar a rota
+    const isAdminRoute = protectedRoutes.system_admin.some(route => pathname.startsWith(route));
+    const isBusinessRoute = protectedRoutes.business_owner.some(route => pathname.startsWith(route));
+    const isCustomerRoute = protectedRoutes.customer.some(route => pathname.startsWith(route));
+    const isCommonRoute = protectedRoutes.common.some(route => pathname.startsWith(route));
+
+    // Permitir acesso a rotas comuns para todos os usuários autenticados
+    if (isCommonRoute) {
+      return NextResponse.next();
+    }
+
+    // Verificar permissões específicas por tipo de usuário
+    if (isAdminRoute && userType !== 'system_admin') {
+      return NextResponse.redirect(new URL('/customer-dashboard', request.url));
+    }
+
+    if (isBusinessRoute && userType !== 'business_owner') {
+      return NextResponse.redirect(new URL('/customer-dashboard', request.url));
+    }
+
+    if (isCustomerRoute && userType !== 'customer') {
+      // Redirecionar para o dashboard apropriado baseado no tipo de usuário
+      const redirectPath = userType === 'system_admin' ? '/admin-dashboard' : '/business-dashboard';
+      return NextResponse.redirect(new URL(redirectPath, request.url));
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    // Token inválido, redirecionar para login
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
 }
 
-// Configurar quais rotas o middleware deve processar
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * 1. /api routes
-     * 2. /_next (Next.js internals)
-     * 3. /_static (inside /public)
-     * 4. /_vercel (Vercel internals)
-     * 5. /favicon.ico, /sitemap.xml (static files)
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
      */
-    '/((?!api|_next|_static|_vercel|favicon.ico|sitemap.xml).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

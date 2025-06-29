@@ -1,35 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { PlanAPI } from '../../lib/api-extended';
-import { Button } from '../../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Input } from '../../components/ui/Input';
-import { Label } from '../../components/ui/Label';
-import { Textarea } from '../../components/ui/Textarea';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/Dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/DropdownMenu';
-import { Separator } from '../../components/ui/Separator';
-import { Edit, MoreVertical, Plus, XCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { useToast } from '../../components/ui/use-toast';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/DropdownMenu';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Separator } from '@/components/ui/Separator';
+import { Textarea } from '@/components/ui/Textarea';
+import { useToast } from '@/components/ui/use-toast';
+import type { Plan } from '@/lib/api';
+import { API } from '@/lib/api';
+import { CheckCircle, Edit, Loader2, MoreVertical, Plus, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function AdminPlans() {
-  interface Plan {
-    id: string;
-    name: string;
-    description?: string;
-    price: number;
-    max_subscriptions: number;
-    max_products: number | null;
-    status: 'active' | 'inactive';
-  }
-
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null);
+  const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -46,7 +37,7 @@ export default function AdminPlans() {
   const loadPlans = async () => {
     setIsLoading(true);
     try {
-      const data = await PlanAPI.list('-created_date');
+      const data = await API.plans.list('-created_date');
       setPlans(data);
     } catch (error) {
       toast({ title: 'Erro ao carregar planos', variant: 'destructive' });
@@ -55,13 +46,13 @@ export default function AdminPlans() {
     }
   };
 
-  const handleEditPlan = (plan) => {
+  const handleEditPlan = (plan: Plan) => {
     setEditingPlan(plan);
     setFormData({
       name: plan.name,
       description: plan.description || '',
-      price: plan.price,
-      max_subscriptions: plan.max_subscriptions,
+      price: plan.price.toString(),
+      max_subscriptions: plan.max_subscriptions.toString(),
       max_products: plan.max_products === null ? '' : plan.max_products.toString(),
     });
     setIsModalOpen(true);
@@ -78,10 +69,10 @@ export default function AdminPlans() {
 
     try {
       if (editingPlan) {
-        await PlanAPI.update(editingPlan.id, planData);
+        await API.plans.update(editingPlan.id, planData);
         toast({ title: 'Plano atualizado com sucesso!' });
       } else {
-        await PlanAPI.create(planData);
+        await API.plans.create(planData);
         toast({ title: 'Plano criado com sucesso!' });
       }
       setIsModalOpen(false);
@@ -93,10 +84,10 @@ export default function AdminPlans() {
     }
   };
 
-  const handleToggleStatus = async (plan) => {
+  const handleToggleStatus = async (plan: Plan) => {
     const newStatus = plan.status === 'active' ? 'inactive' : 'active';
     try {
-      await PlanAPI.update(plan.id, { status: newStatus });
+      await API.plans.update(plan.id, { status: newStatus });
       toast({ title: `Plano ${newStatus === 'active' ? 'ativado' : 'desativado'}.` });
       loadPlans();
     } catch (error) {
@@ -104,7 +95,7 @@ export default function AdminPlans() {
     }
   };
 
-  const formatCurrency = (value) => {
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -219,6 +210,12 @@ export default function AdminPlans() {
                     {plan.max_products === null ? 'Ilimitado' : plan.max_products}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Serviços:</span>
+                  <span className="font-medium text-slate-900">
+                    {plan.max_services === null ? 'Ilimitado' : plan.max_services}
+                  </span>
+                </div>
               </div>
 
               <Separator />
@@ -235,23 +232,53 @@ export default function AdminPlans() {
           <div className="space-y-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">Nome</Label>
-              <Input id="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="col-span-3" />
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                className="col-span-3"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="price" className="text-right">Preço (R$)</Label>
-              <Input id="price" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="col-span-3" />
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={e => setFormData({...formData, price: e.target.value})}
+                className="col-span-3"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="max_subscriptions" className="text-right">Max Assinaturas</Label>
-              <Input id="max_subscriptions" type="number" value={formData.max_subscriptions} onChange={e => setFormData({...formData, max_subscriptions: e.target.value})} className="col-span-3" />
+              <Input
+                id="max_subscriptions"
+                type="number"
+                value={formData.max_subscriptions}
+                onChange={e => setFormData({...formData, max_subscriptions: e.target.value})}
+                className="col-span-3"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="max_products" className="text-right">Max Produtos</Label>
-              <Input id="max_products" type="number" value={formData.max_products} onChange={e => setFormData({...formData, max_products: e.target.value})} className="col-span-3" placeholder="Deixe vazio para ilimitado" />
+              <Input
+                id="max_products"
+                type="number"
+                value={formData.max_products}
+                onChange={e => setFormData({...formData, max_products: e.target.value})}
+                className="col-span-3"
+                placeholder="Deixe vazio para ilimitado"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">Descrição</Label>
-              <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="col-span-3" />
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={e => setFormData({...formData, description: e.target.value})}
+                className="col-span-3"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -267,4 +294,4 @@ export default function AdminPlans() {
       </Dialog>
     </div>
   );
-}</assistant
+}

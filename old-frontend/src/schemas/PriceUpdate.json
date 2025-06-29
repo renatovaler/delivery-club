@@ -1,0 +1,61 @@
+{
+  "name": "PriceUpdate",
+  "type": "object",
+  "properties": {
+    "product_id": {
+      "type": "string",
+      "description": "ID do produto"
+    },
+    "team_id": {
+      "type": "string",
+      "description": "ID da empresa"
+    },
+    "old_price": {
+      "type": "number",
+      "description": "Preço anterior"
+    },
+    "new_price": {
+      "type": "number",
+      "description": "Novo preço"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data em que o novo preço entra em vigor"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Motivo da alteração de preço"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "applied",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Status da atualização"
+    },
+    "notifications_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se as notificações foram enviadas aos clientes"
+    }
+  },
+  "required": [
+    "product_id",
+    "team_id",
+    "old_price",
+    "new_price",
+    "effective_date"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "team_id": {
+      "type": "string",
+      "description": "ID da padaria"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descrição da despesa"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Valor da despesa"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria da despesa"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data em que a despesa ocorreu"
+    }
+  },
+  "required": [
+    "team_id",
+    "description",
+    "amount",
+    "category",
+    "date"
+  ]
+}
