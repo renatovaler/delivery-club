@@ -42,8 +42,17 @@ export interface SubscriptionItem {
 export interface Team {
   id: string;
   name: string;
-  subscription_status?: string;
-  created_date?: string;
+  owner_id: string;
+  cnpj_cpf?: string;
+  subscription_status:
+    | 'active'
+    | 'trial'
+    | 'cancelled'
+    | 'cancellation_pending'
+    | 'suspended'
+    | 'paused';
+  plan_id: string;
+  created_date: string;
 }
 
 // API Functions
