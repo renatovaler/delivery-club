@@ -2,9 +2,9 @@
 
 ## 📊 Resumo Executivo
 
-**Total de Páginas:** 32 páginas originais
-**Páginas Migradas:** 15 páginas (47%)
-**Páginas Pendentes:** 17 páginas (53%)
+**Total de Páginas:** 30 páginas originais (removidas SelfHostGuide*)
+**Páginas Migradas:** 15 páginas (50%)
+**Páginas Pendentes:** 15 páginas (50%)
 
 ---
 
@@ -19,8 +19,8 @@
 - ✅ **AdminPlans.jsx** → `admin-plans/page.tsx`
 - ✅ **AdminSystemTests.jsx** → `admin-system-tests/page.tsx`
 - ❌ **AdminSubscriptions.jsx** → `admin-subscriptions/page.tsx` *(migrada mas não listada originalmente)*
-- ❌ **SelfHostGuideLaravel.jsx** → *PENDENTE*
-- ❌ **SelfHostGuideNodeJS.jsx** → *PENDENTE*
+- ❌ **SelfHostGuideLaravel.jsx** → *REMOVIDA (desnecessária)*
+- ❌ **SelfHostGuideNodeJS.jsx** → *REMOVIDA (desnecessária)*
 
 ### Business Pages (0/13 migradas)
 - ❌ **BusinessDashboard.jsx** → *PENDENTE*
@@ -74,12 +74,10 @@ Estas são as páginas mais críticas para o funcionamento do sistema:
 12. **StripeConfiguration.jsx** - Configuração do Stripe
 13. **TeamManagement.jsx** - Gestão de equipes
 
-### 🟡 Média Prioridade - Admin & Customer (4 páginas)
-2. **SelfHostGuideLaravel.jsx** - Guia de self-hosting Laravel
-3. **SelfHostGuideNodeJS.jsx** - Guia de self-hosting NodeJS
-4. **CustomerSupport.jsx** - Suporte ao cliente
-5. **PlatformReports.jsx** - Relatórios da plataforma
-6. **Onboarding.jsx** - Processo de integração
+### 🟡 Média Prioridade - Customer & Common (3 páginas)
+1. **CustomerSupport.jsx** - Suporte ao cliente
+2. **PlatformReports.jsx** - Relatórios da plataforma
+3. **Onboarding.jsx** - Processo de integração
 
 ---
 
@@ -87,11 +85,11 @@ Estas são as páginas mais críticas para o funcionamento do sistema:
 
 | Categoria | Migradas | Pendentes | % Concluído |
 |-----------|----------|-----------|-------------|
-| **Admin** | 7/10 | 3 | 70% |
+| **Admin** | 7/8 | 1 | 88% |
 | **Business** | 0/13 | 13 | 0% |
 | **Customer** | 4/6 | 2 | 67% |
 | **Common** | 4/6 | 2 | 67% |
-| **TOTAL** | **15/32** | **17** | **47%** |
+| **TOTAL** | **15/30** | **15** | **50%** |
 
 ---
 
