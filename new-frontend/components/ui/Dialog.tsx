@@ -9,7 +9,7 @@ interface DialogProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
-export function Dialog({ open, onOpenChange, children, ...props }: DialogProps) {
+export function Dialog(): void {
   return (
     <div
       className={cn(
@@ -20,7 +20,7 @@ export function Dialog({ open, onOpenChange, children, ...props }: DialogProps) 
       {...props}
     >
       <div
-        className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6"
+        className='bg-white rounded-lg shadow-lg max-w-lg w-full p-6'
         onClick={(e) => e.stopPropagation()}
       >
         {children}
@@ -29,7 +29,7 @@ export function Dialog({ open, onOpenChange, children, ...props }: DialogProps) 
   );
 }
 
-export function DialogContent({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function DialogContent(): void {
   return (
     <div className={cn('p-4', className)} {...props}>
       {children}
@@ -37,7 +37,7 @@ export function DialogContent({ children, className, ...props }: React.HTMLAttri
   );
 }
 
-export function DialogHeader({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function DialogHeader(): void {
   return (
     <div className={cn('mb-4', className)} {...props}>
       {children}
@@ -45,7 +45,7 @@ export function DialogHeader({ children, className, ...props }: React.HTMLAttrib
   );
 }
 
-export function DialogTitle({ children, className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+export function DialogTitle(): void {
   return (
     <h2 className={cn('text-lg font-semibold', className)} {...props}>
       {children}
@@ -53,7 +53,7 @@ export function DialogTitle({ children, className, ...props }: React.HTMLAttribu
   );
 }
 
-export function DialogFooter({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function DialogFooter(): void {
   return (
     <div className={cn('mt-4 flex justify-end space-x-2', className)} {...props}>
       {children}

@@ -7,7 +7,7 @@ interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   className?: string;
 }
 
-export function Label({ className, ...props }: LabelProps) {
+export function Label(): void {
   return (
     <label
       className={cn(

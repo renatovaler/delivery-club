@@ -7,7 +7,7 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   className?: string;
 }
 
-export function Textarea({ className, ...props }: TextareaProps) {
+export function Textarea(): void {
   return (
     <textarea
       className={cn(

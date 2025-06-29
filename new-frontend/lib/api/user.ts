@@ -30,7 +30,7 @@ export const UserAPI = {
   delete: (id: string) => apiClient.delete(`/users/${id}`).then((res: any) => res.data),
 
   logout: () => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') { {
       localStorage.removeItem('authToken');
       window.location.href = '/login';
     }

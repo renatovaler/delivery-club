@@ -3,7 +3,7 @@ interface LoadingSpinnerProps {
   light?: boolean;
 }
 
-export function LoadingSpinner({ size = 'md', light = false }: LoadingSpinnerProps) {
+export function LoadingSpinner(): void {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-8 w-8',
@@ -11,7 +11,7 @@ export function LoadingSpinner({ size = 'md', light = false }: LoadingSpinnerPro
   };
 
   return (
-    <div className="flex items-center justify-center">
+    <div className='flex items-center justify-center'>
       <div
         className={`animate-spin rounded-full border-2 border-t-2 ${
           light ? 'border-white border-t-transparent' : 'border-slate-900 border-t-transparent'
@@ -25,11 +25,11 @@ interface LoadingScreenProps {
   message?: string;
 }
 
-export function LoadingScreen({ message = 'Carregando...' }: LoadingScreenProps) {
+export function LoadingScreen(): void {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      <LoadingSpinner size="lg" />
-      <p className="mt-4 text-slate-600">{message}</p>
+    <div className='min-h-screen flex flex-col items-center justify-center'>
+      <LoadingSpinner size='lg' />
+      <p className='mt-4 text-slate-600'>{message}</p>
     </div>
   );
 }
@@ -38,12 +38,12 @@ interface LoadingOverlayProps {
   message?: string;
 }
 
-export function LoadingOverlay({ message }: LoadingOverlayProps) {
+export function LoadingOverlay(): void {
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
-        <LoadingSpinner size="lg" />
-        {message && <p className="mt-4 text-slate-600">{message}</p>}
+    <div className='fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50'>
+      <div className='bg-white p-6 rounded-lg shadow-xl flex flex-col items-center'>
+        <LoadingSpinner size='lg' />
+        {message && <p className='mt-4 text-slate-600'>{message}</p>}
       </div>
     </div>
   );

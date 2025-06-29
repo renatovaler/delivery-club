@@ -7,7 +7,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   className?: string;
 }
 
-export function Input({ className, ...props }: InputProps) {
+export function Input(): void {
   return (
     <input
       className={cn(

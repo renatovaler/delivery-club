@@ -2,12 +2,12 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 import type { ProgressProps } from './Progress.types';
 
-export default function Progress({ value, max = 100, className, ...props }: ProgressProps) {
+export default function Progress(): void {
   const percentage = Math.min(Math.max(value, 0), max) / max * 100;
 
   return (
     <div
-      role="progressbar"
+      role='progressbar'
       aria-valuemin={0}
       aria-valuemax={max}
       aria-valuenow={value}
@@ -15,7 +15,7 @@ export default function Progress({ value, max = 100, className, ...props }: Prog
       {...props}
     >
       <div
-        className="h-full bg-blue-600 transition-all duration-300"
+        className='h-full bg-blue-600 transition-all duration-300'
         style={{ width: `${percentage}%` }}
       />
     </div>

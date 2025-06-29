@@ -15,23 +15,23 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export const ToastProvider = ({ children }: { children: ReactNode }) => {
+export const ToastProvider = (): void => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = (toast: Omit<Toast, 'id'>) => {
+  const toast = (): void => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, ...toast }]);
     setTimeout(() => removeToast(id), 5000);
   };
 
-  const removeToast = (id: number) => {
+  const removeToast = (): void => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
   return (
     <ToastContext.Provider value={{ toasts, toast, removeToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 space-y-2 z-50">
+      <div className='fixed bottom-4 right-4 space-y-2 z-50'>
         {toasts.map(({ id, title, description, variant }) => (
           <div
             key={id}
@@ -39,8 +39,8 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               variant === 'destructive' ? 'border-red-500 bg-red-50' : 'border-gray-300'
             }`}
           >
-            <strong className="block font-semibold">{title}</strong>
-            {description && <p className="text-sm">{description}</p>}
+            <strong className='block font-semibold'>{title}</strong>
+            {description && <p className='text-sm'>{description}</p>}
           </div>
         ))}
       </div>
@@ -48,9 +48,9 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useToast = () => {
+export const useToast = (): void => {
   const context = useContext(ToastContext);
-  if (!context) {
+  if (!context) { {
     throw new Error('useToast must be used within a ToastProvider');
   }
   return context;

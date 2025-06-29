@@ -8,15 +8,15 @@ interface TableProps {
   className?: string;
 }
 
-export function Table({ children, className }: TableProps) {
+export function Table(): void {
   return (
     <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full border-collapse border border-slate-200">{children}</table>
+      <table className='w-full border-collapse border border-slate-200'>{children}</table>
     </div>
   );
 }
 
-export function TableHeader({ children, className }: TableProps) {
+export function TableHeader(): void {
   return (
     <thead className={cn('bg-slate-50', className)}>
       {children}
@@ -24,7 +24,7 @@ export function TableHeader({ children, className }: TableProps) {
   );
 }
 
-export function TableBody({ children, className }: TableProps) {
+export function TableBody(): void {
   return (
     <tbody className={cn(className)}>
       {children}
@@ -32,7 +32,7 @@ export function TableBody({ children, className }: TableProps) {
   );
 }
 
-export function TableRow({ children, className }: TableProps) {
+export function TableRow(): void {
   return (
     <tr className={cn('border-b border-slate-200 hover:bg-slate-50', className)}>
       {children}
@@ -40,10 +40,10 @@ export function TableRow({ children, className }: TableProps) {
   );
 }
 
-export function TableHead({ children, className }: TableProps) {
+export function TableHead(): void {
   return (
     <th
-      scope="col"
+      scope='col'
       className={cn(
         'text-left text-sm font-semibold text-slate-900 px-4 py-2',
         className
@@ -54,7 +54,7 @@ export function TableHead({ children, className }: TableProps) {
   );
 }
 
-export function TableCell({ children, className }: TableProps) {
+export function TableCell(): void {
   return (
     <td className={cn('text-sm text-slate-700 px-4 py-2', className)}>
       {children}

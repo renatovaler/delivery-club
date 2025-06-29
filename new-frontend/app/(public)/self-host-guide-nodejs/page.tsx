@@ -1,8 +1,8 @@
 'use client';
 
-export default function SelfHostGuideNodeJSPage() {
+export default function SelfHostGuideNodeJSPage(): void {
   const proxyConfig = {
-    upgrade: "'upgrade'",
+    upgrade: ''upgrade'',
     host: '$host',
     realIp: '$remote_addr',
     forwardedFor: '$proxy_add_x_forwarded_for',
@@ -11,18 +11,18 @@ export default function SelfHostGuideNodeJSPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className='mx-auto max-w-4xl px-4 py-8'>
       {/* Conteúdo anterior mantido igual até a configuração do Nginx */}
 
-      <div className="card">
-        <div className="card-header">
-          <h2 className="text-2xl font-semibold">Passo 5: Configuração do Nginx</h2>
+      <div className='card'>
+        <div className='card-header'>
+          <h2 className='text-2xl font-semibold'>Passo 5: Configuração do Nginx</h2>
         </div>
-        <div className="card-content">
-          <div className="space-y-4">
+        <div className='card-content'>
+          <div className='space-y-4'>
             <div>
-              <h3 className="mb-2 text-lg font-medium">Configure o Nginx como proxy reverso:</h3>
-              <div className="rounded-lg bg-gray-100 p-4 font-mono text-sm">
+              <h3 className='mb-2 text-lg font-medium'>Configure o Nginx como proxy reverso:</h3>
+              <div className='rounded-lg bg-gray-100 p-4 font-mono text-sm'>
                 {`# Frontend
 server {
     listen 80;
@@ -66,8 +66,8 @@ server {
 
       {/* Resto do conteúdo mantido igual */}
 
-      <div className="mt-8 text-center">
-        <button onClick={() => window.history.back()} className="btn btn-outline">
+      <div className='mt-8 text-center'>
+        <button onClick={() => window.history.back()} className='btn btn-outline'>
           Voltar
         </button>
       </div>

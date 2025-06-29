@@ -34,7 +34,7 @@ interface OwnersMap {
   [key: string]: User;
 }
 
-export default function AdminBusinesses() {
+export default function AdminBusinesses(): void {
   const [businesses, setBusinesses] = useState<Team[]>([]);
   const [owners, setOwners] = useState<OwnersMap>({});
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -54,7 +54,7 @@ export default function AdminBusinesses() {
     applyFilters();
   }, [filters, businesses, owners, plans]);
 
-  const handleFilterChange = (key: keyof BusinessFilters, value: string) => {
+  const handleFilterChange = (): void => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -73,7 +73,7 @@ export default function AdminBusinesses() {
 
       const ownersMap: OwnersMap = {};
       ownerData.filter(Boolean).forEach((owner) => {
-        if (owner) {
+        if (owner) { {
           ownersMap[owner.id] = owner;
         }
       });
@@ -86,7 +86,7 @@ export default function AdminBusinesses() {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = (): void => {
     let filtered = businesses.filter((business) => {
       const matchesSearch =
         business.name.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -105,7 +105,7 @@ export default function AdminBusinesses() {
     setFilteredBusinesses(filtered);
   };
 
-  const getStatusBadge = (status: Team['subscription_status']) => {
+  const getStatusBadge = (): void => {
     const statuses: Record<string, string> = {
       active: 'bg-green-500 hover:bg-green-600',
       trial: 'bg-blue-500 hover:bg-blue-600',
@@ -125,76 +125,76 @@ export default function AdminBusinesses() {
     return <Badge className={statuses[status] || 'bg-gray-400'}>{labels[status] || status}</Badge>;
   };
 
-  if (isLoading) {
+  if (isLoading) { {
     return (
-      <div className="w-full p-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-1/3 rounded bg-slate-200"></div>
-          <div className="h-64 rounded-xl bg-slate-200"></div>
+      <div className='w-full p-8'>
+        <div className='animate-pulse space-y-6'>
+          <div className='h-8 w-1/3 rounded bg-slate-200'></div>
+          <div className='h-64 rounded-xl bg-slate-200'></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-8 p-6 md:p-8">
+    <div className='w-full space-y-8 p-6 md:p-8'>
       <div>
-        <h1 className="mb-2 text-3xl font-bold text-slate-900">Empresas Cadastradas</h1>
-        <p className="text-slate-600">Gerencie todas as empresas que utilizam a plataforma.</p>
+        <h1 className='mb-2 text-3xl font-bold text-slate-900'>Empresas Cadastradas</h1>
+        <p className='text-slate-600'>Gerencie todas as empresas que utilizam a plataforma.</p>
       </div>
 
-      <Card className="border-0 shadow-lg">
+      <Card className='border-0 shadow-lg'>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-slate-900">
-            <Filter className="h-5 w-5" />
+          <CardTitle className='flex items-center gap-2 text-slate-900'>
+            <Filter className='h-5 w-5' />
             Filtros
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Buscar Empresa</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            <div className='space-y-2'>
+              <label className='text-sm font-medium'>Buscar Empresa</label>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400' />
                 <Input
-                  placeholder="Nome ou CNPJ/CPF"
+                  placeholder='Nome ou CNPJ/CPF'
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="pl-10"
+                  className='pl-10'
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status da Assinatura</label>
+            <div className='space-y-2'>
+              <label className='text-sm font-medium'>Status da Assinatura</label>
               <Select
                 value={filters.status}
                 onValueChange={(value) => handleFilterChange('status', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
+                  <SelectValue placeholder='Todos os status' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="active">Ativa</SelectItem>
-                  <SelectItem value="trial">Trial</SelectItem>
-                  <SelectItem value="paused">Pausada</SelectItem>
-                  <SelectItem value="cancelled">Cancelada</SelectItem>
+                  <SelectItem value='all'>Todos</SelectItem>
+                  <SelectItem value='active'>Ativa</SelectItem>
+                  <SelectItem value='trial'>Trial</SelectItem>
+                  <SelectItem value='paused'>Pausada</SelectItem>
+                  <SelectItem value='cancelled'>Cancelada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Plano</label>
+            <div className='space-y-2'>
+              <label className='text-sm font-medium'>Plano</label>
               <Select
                 value={filters.plan_id}
                 onValueChange={(value) => handleFilterChange('plan_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos os Planos" />
+                  <SelectValue placeholder='Todos os Planos' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Planos</SelectItem>
+                  <SelectItem value='all'>Todos os Planos</SelectItem>
                   {plans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
                       {plan.name}
@@ -207,27 +207,27 @@ export default function AdminBusinesses() {
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-lg">
+      <Card className='border-0 shadow-lg'>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-slate-900">
-            <Building2 className="h-5 w-5" />
+          <CardTitle className='flex items-center gap-2 text-slate-900'>
+            <Building2 className='h-5 w-5' />
             Empresas ({filteredBusinesses.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {filteredBusinesses.length === 0 ? (
-            <div className="py-12 text-center">
-              <Building2 className="mx-auto mb-4 h-16 w-16 text-slate-400" />
-              <h3 className="mb-2 text-xl font-semibold text-slate-900">
+            <div className='py-12 text-center'>
+              <Building2 className='mx-auto mb-4 h-16 w-16 text-slate-400' />
+              <h3 className='mb-2 text-xl font-semibold text-slate-900'>
                 Nenhuma empresa encontrada
               </h3>
-              <p className="text-slate-600">Tente ajustar os filtros para ver mais resultados.</p>
+              <p className='text-slate-600'>Tente ajustar os filtros para ver mais resultados.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className='overflow-x-auto'>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50">
+                  <TableRow className='bg-slate-50'>
                     <TableHead>Empresa</TableHead>
                     <TableHead>Contato</TableHead>
                     <TableHead>Plano</TableHead>
@@ -237,33 +237,33 @@ export default function AdminBusinesses() {
                 </TableHeader>
                 <TableBody>
                   {filteredBusinesses.map((business) => (
-                    <TableRow key={business.id} className="hover:bg-slate-50">
+                    <TableRow key={business.id} className='hover:bg-slate-50'>
                       <TableCell>
-                        <div className="font-medium text-slate-900">{business.name}</div>
-                        <div className="text-sm text-gray-500">{business.cnpj_cpf}</div>
+                        <div className='font-medium text-slate-900'>{business.name}</div>
+                        <div className='text-sm text-gray-500'>{business.cnpj_cpf}</div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium text-slate-900">
+                        <div className='font-medium text-slate-900'>
                           {owners[business.owner_id]?.full_name || '...'}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className='text-sm text-gray-500'>
                           {owners[business.owner_id]?.email || '...'}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="border-blue-300 text-blue-700">
+                        <Badge variant='outline' className='border-blue-300 text-blue-700'>
                           {plans.find((p) => p.id === business.plan_id)?.name || 'Sem plano'}
                         </Badge>
                       </TableCell>
                       <TableCell>{getStatusBadge(business.subscription_status)}</TableCell>
                       <TableCell>
                         <Button
-                          size="sm"
-                          variant="outline"
+                          size='sm'
+                          variant='outline'
                           onClick={() => alert(`Visualizar ${business.name}`)}
-                          className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                          className='border-slate-300 text-slate-700 hover:bg-slate-50'
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className='h-4 w-4' />
                         </Button>
                       </TableCell>
                     </TableRow>

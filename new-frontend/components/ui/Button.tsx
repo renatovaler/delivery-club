@@ -52,14 +52,14 @@ const Button = forwardRef<ButtonRef, ButtonProps>(({
     >
       {isLoading ? (
         <>
-          <LoadingSpinner size="sm" light={variant === 'default' || variant === 'destructive'} />
-          <span className="ml-2">{children}</span>
+          <LoadingSpinner size='sm' light={variant === 'default' || variant === 'destructive'} />
+          <span className='ml-2'>{children}</span>
         </>
       ) : (
         <>
-          {leftIcon && <span className="mr-2">{leftIcon}</span>}
+          {leftIcon && <span className='mr-2'>{leftIcon}</span>}
           {children}
-          {rightIcon && <span className="ml-2">{rightIcon}</span>}
+          {rightIcon && <span className='ml-2'>{rightIcon}</span>}
         </>
       )}
     </button>

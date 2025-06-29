@@ -127,19 +127,19 @@ const navigationItems: NavItem[] = [
   }
 ];
 
-export function Navigation() {
+export function Navigation(): void {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     logout();
   };
 
   // Don't show navigation on auth pages
-  if (!user || ['/login', '/register', '/forgot-password', '/reset-password'].includes(pathname)) {
+  if (!user || ['/login', '/register', '/forgot-password', '/reset-password'].includes(pathname) {) {
     return null;
   }
 
@@ -148,7 +148,7 @@ export function Navigation() {
     !item.roles || item.roles.includes(user.user_type || 'customer')
   );
 
-  const getUserTypeLabel = (userType: string) => {
+  const getUserTypeLabel = (): void => {
     switch (userType) {
       case 'system_admin':
         return 'Administrador';
@@ -161,7 +161,7 @@ export function Navigation() {
     }
   };
 
-  const getThemeColor = (userType: string) => {
+  const getThemeColor = (): void => {
     switch (userType) {
       case 'system_admin':
         return 'bg-red-900';
@@ -176,27 +176,27 @@ export function Navigation() {
 
   return (
     <nav className={`${getThemeColor(user.user_type || 'customer')} text-white shadow-lg`}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className='container mx-auto px-4'>
+        <div className='flex items-center justify-between h-16'>
           {/* Logo/Brand */}
-          <div className="flex items-center space-x-4">
+          <div className='flex items-center space-x-4'>
             <Link
               href={allowedItems[0]?.href || '/'}
-              className="text-xl font-bold flex items-center space-x-2"
+              className='text-xl font-bold flex items-center space-x-2'
             >
-              <LayoutDashboard className="w-6 h-6" />
+              <LayoutDashboard className='w-6 h-6' />
               <span>Delivery Club</span>
             </Link>
 
-            <div className="hidden md:block">
-              <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+            <div className='hidden md:block'>
+              <span className='text-xs bg-white/20 px-2 py-1 rounded-full'>
                 {getUserTypeLabel(user.user_type || 'customer')}
               </span>
             </div>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className='hidden md:flex items-center space-x-1'>
             {allowedItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -209,7 +209,7 @@ export function Navigation() {
                       : 'text-white/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className='w-4 h-4' />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -217,29 +217,29 @@ export function Navigation() {
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:block text-right">
-              <div className="text-sm font-medium">{user.full_name}</div>
-              <div className="text-xs text-white/60">{user.email}</div>
+          <div className='flex items-center space-x-4'>
+            <div className='hidden md:block text-right'>
+              <div className='text-sm font-medium'>{user.full_name}</div>
+              <div className='text-xs text-white/60'>{user.email}</div>
             </div>
 
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              className='flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors'
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden md:inline">Sair</span>
+              <LogOut className='w-4 h-4' />
+              <span className='hidden md:inline'>Sair</span>
             </button>
 
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-md text-white/80 hover:bg-white/10 hover:text-white"
+              className='md:hidden p-2 rounded-md text-white/80 hover:bg-white/10 hover:text-white'
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5" />
+                <X className='w-5 h-5' />
               ) : (
-                <Menu className="w-5 h-5" />
+                <Menu className='w-5 h-5' />
               )}
             </button>
           </div>
@@ -247,18 +247,18 @@ export function Navigation() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-white/20">
-            <div className="px-2 pt-2 pb-3 space-y-1">
+          <div className='md:hidden border-t border-white/20'>
+            <div className='px-2 pt-2 pb-3 space-y-1'>
               {/* User info on mobile */}
-              <div className="px-3 py-2 text-sm">
-                <div className="font-medium">{user.full_name}</div>
-                <div className="text-xs text-white/60">{user.email}</div>
-                <div className="text-xs bg-white/20 px-2 py-1 rounded-full inline-block mt-1">
+              <div className='px-3 py-2 text-sm'>
+                <div className='font-medium'>{user.full_name}</div>
+                <div className='text-xs text-white/60'>{user.email}</div>
+                <div className='text-xs bg-white/20 px-2 py-1 rounded-full inline-block mt-1'>
                   {getUserTypeLabel(user.user_type || 'customer')}
                 </div>
               </div>
 
-              <div className="border-t border-white/20 pt-2">
+              <div className='border-t border-white/20 pt-2'>
                 {allowedItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -272,7 +272,7 @@ export function Navigation() {
                           : 'text-white/80 hover:bg-white/10 hover:text-white'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className='w-5 h-5' />
                       <span>{item.label}</span>
                     </Link>
                   );

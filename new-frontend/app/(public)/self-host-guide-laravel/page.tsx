@@ -1,22 +1,22 @@
 'use client';
 
-export default function SelfHostGuideLaravelPage() {
+export default function SelfHostGuideLaravelPage(): void {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="space-y-8">
-        <div className="text-center">
-          <h1 className="mb-4 text-4xl font-bold text-gray-900">Guia de Self-Hosting - Laravel</h1>
-          <p className="text-xl text-gray-600">
+    <div className='mx-auto max-w-4xl px-4 py-8'>
+      <div className='space-y-8'>
+        <div className='text-center'>
+          <h1 className='mb-4 text-4xl font-bold text-gray-900'>Guia de Self-Hosting - Laravel</h1>
+          <p className='text-xl text-gray-600'>
             Como configurar e hospedar sua própria instância usando Laravel
           </p>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Pré-requisitos</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Pré-requisitos</h2>
           </div>
-          <div className="card-content">
-            <ul className="list-inside list-disc space-y-2">
+          <div className='card-content'>
+            <ul className='list-inside list-disc space-y-2'>
               <li>PHP 8.1 ou superior</li>
               <li>Composer</li>
               <li>MySQL 8.0 ou PostgreSQL 13+</li>
@@ -26,15 +26,15 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Passo 1: Instalação</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Passo 1: Instalação</h2>
           </div>
-          <div className="card-content">
-            <div className="space-y-4">
+          <div className='card-content'>
+            <div className='space-y-4'>
               <div>
-                <h3 className="mb-2 text-lg font-medium">Clone o repositório:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Clone o repositório:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   git clone https://github.com/seu-usuario/delivery-club-laravel.git
                   <br />
                   cd delivery-club-laravel
@@ -42,8 +42,8 @@ export default function SelfHostGuideLaravelPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-lg font-medium">Instale as dependências:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Instale as dependências:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   composer install
                   <br />
                   npm install
@@ -55,15 +55,15 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Passo 2: Configuração</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Passo 2: Configuração</h2>
           </div>
-          <div className="card-content">
-            <div className="space-y-4">
+          <div className='card-content'>
+            <div className='space-y-4'>
               <div>
-                <h3 className="mb-2 text-lg font-medium">Configure o arquivo .env:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Configure o arquivo .env:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   cp .env.example .env
                   <br />
                   php artisan key:generate
@@ -71,9 +71,9 @@ export default function SelfHostGuideLaravelPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-lg font-medium">Variáveis de ambiente essenciais:</h3>
-                <div className="rounded-lg bg-gray-100 p-4 font-mono text-sm">
-                  APP_NAME="Delivery Club"
+                <h3 className='mb-2 text-lg font-medium'>Variáveis de ambiente essenciais:</h3>
+                <div className='rounded-lg bg-gray-100 p-4 font-mono text-sm'>
+                  APP_NAME='Delivery Club'
                   <br />
                   APP_ENV=production
                   <br />
@@ -108,15 +108,15 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Passo 3: Banco de Dados</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Passo 3: Banco de Dados</h2>
           </div>
-          <div className="card-content">
-            <div className="space-y-4">
+          <div className='card-content'>
+            <div className='space-y-4'>
               <div>
-                <h3 className="mb-2 text-lg font-medium">Execute as migrações:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Execute as migrações:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   php artisan migrate
                   <br />
                   php artisan db:seed
@@ -124,8 +124,8 @@ export default function SelfHostGuideLaravelPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-lg font-medium">Crie um usuário administrador:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Crie um usuário administrador:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   php artisan make:admin admin@exemplo.com
                 </div>
               </div>
@@ -133,15 +133,15 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Passo 4: Configuração do Servidor</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Passo 4: Configuração do Servidor</h2>
           </div>
-          <div className="card-content">
-            <div className="space-y-4">
+          <div className='card-content'>
+            <div className='space-y-4'>
               <div>
-                <h3 className="mb-2 text-lg font-medium">Nginx (recomendado):</h3>
-                <div className="rounded-lg bg-gray-100 p-4 font-mono text-sm">
+                <h3 className='mb-2 text-lg font-medium'>Nginx (recomendado):</h3>
+                <div className='rounded-lg bg-gray-100 p-4 font-mono text-sm'>
                   server &#123;
                   <br />
                   &nbsp;&nbsp;listen 80;
@@ -151,9 +151,9 @@ export default function SelfHostGuideLaravelPage() {
                   &nbsp;&nbsp;root /var/www/delivery-club/public;
                   <br />
                   <br />
-                  &nbsp;&nbsp;add_header X-Frame-Options "SAMEORIGIN";
+                  &nbsp;&nbsp;add_header X-Frame-Options 'SAMEORIGIN';
                   <br />
-                  &nbsp;&nbsp;add_header X-Content-Type-Options "nosniff";
+                  &nbsp;&nbsp;add_header X-Content-Type-Options 'nosniff';
                   <br />
                   <br />
                   &nbsp;&nbsp;index index.php;
@@ -204,15 +204,15 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Passo 5: SSL e Segurança</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Passo 5: SSL e Segurança</h2>
           </div>
-          <div className="card-content">
-            <div className="space-y-4">
+          <div className='card-content'>
+            <div className='space-y-4'>
               <div>
-                <h3 className="mb-2 text-lg font-medium">Instale o Certbot para SSL gratuito:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Instale o Certbot para SSL gratuito:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   sudo apt install certbot python3-certbot-nginx
                   <br />
                   sudo certbot --nginx -d seu-dominio.com
@@ -220,8 +220,8 @@ export default function SelfHostGuideLaravelPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-lg font-medium">Configure permissões:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Configure permissões:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   sudo chown -R www-data:www-data /var/www/delivery-club
                   <br />
                   sudo chmod -R 755 /var/www/delivery-club
@@ -235,15 +235,15 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Passo 6: Configuração de Produção</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Passo 6: Configuração de Produção</h2>
           </div>
-          <div className="card-content">
-            <div className="space-y-4">
+          <div className='card-content'>
+            <div className='space-y-4'>
               <div>
-                <h3 className="mb-2 text-lg font-medium">Otimize para produção:</h3>
-                <div className="rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400">
+                <h3 className='mb-2 text-lg font-medium'>Otimize para produção:</h3>
+                <div className='rounded-lg bg-gray-900 p-4 font-mono text-sm text-green-400'>
                   php artisan config:cache
                   <br />
                   php artisan route:cache
@@ -255,8 +255,8 @@ export default function SelfHostGuideLaravelPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-lg font-medium">Configure o supervisor para filas:</h3>
-                <div className="rounded-lg bg-gray-100 p-4 font-mono text-sm">
+                <h3 className='mb-2 text-lg font-medium'>Configure o supervisor para filas:</h3>
+                <div className='rounded-lg bg-gray-100 p-4 font-mono text-sm'>
                   [program:delivery-club-worker]
                   <br />
                   process_name=%(program_name)s_%(process_num)02d
@@ -280,31 +280,31 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-2xl font-semibold">Suporte e Documentação</h2>
+        <div className='card'>
+          <div className='card-header'>
+            <h2 className='text-2xl font-semibold'>Suporte e Documentação</h2>
           </div>
-          <div className="card-content">
-            <div className="space-y-4">
+          <div className='card-content'>
+            <div className='space-y-4'>
               <p>Para mais informações e suporte:</p>
-              <ul className="list-inside list-disc space-y-2">
+              <ul className='list-inside list-disc space-y-2'>
                 <li>
-                  <a href="https://laravel.com/docs" className="text-blue-600 hover:underline">
+                  <a href='https://laravel.com/docs' className='text-blue-600 hover:underline'>
                     Documentação do Laravel
                   </a>
                 </li>
                 <li>
                   <a
-                    href="https://github.com/seu-usuario/delivery-club-laravel"
-                    className="text-blue-600 hover:underline"
+                    href='https://github.com/seu-usuario/delivery-club-laravel'
+                    className='text-blue-600 hover:underline'
                   >
                     Repositório no GitHub
                   </a>
                 </li>
                 <li>
                   <a
-                    href="mailto:suporte@delivery-club.com"
-                    className="text-blue-600 hover:underline"
+                    href='mailto:suporte@delivery-club.com'
+                    className='text-blue-600 hover:underline'
                   >
                     Suporte Técnico
                   </a>
@@ -314,8 +314,8 @@ export default function SelfHostGuideLaravelPage() {
           </div>
         </div>
 
-        <div className="text-center">
-          <button onClick={() => window.history.back()} className="btn btn-outline">
+        <div className='text-center'>
+          <button onClick={() => window.history.back()} className='btn btn-outline'>
             Voltar
           </button>
         </div>

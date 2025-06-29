@@ -8,13 +8,13 @@ export const metadata = {
   description: 'Gerencie suas assinaturas e serviços',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout(): void {
   return (
-    <html lang="pt-BR">
-      <body className="bg-slate-50 text-slate-900 min-h-screen">
+    <html lang='pt-BR'>
+      <body className='bg-slate-50 text-slate-900 min-h-screen'>
         <Providers>
           <Navigation />
-          <main className="container mx-auto px-4 py-8">
+          <main className='container mx-auto px-4 py-8'>
             {children}
           </main>
         </Providers>
