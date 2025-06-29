@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import apiClient from './apiClient';
 import { User } from './api';
+import apiClient from './apiClient';
 
 interface AuthState {
   user: User | null;
@@ -45,7 +45,7 @@ export const useAuth = create<AuthState>()(
 
       refreshAccessToken: async () => {
         const { refreshToken } = get();
-        if (!refreshToken) { {
+        if (!refreshToken) {
           throw new Error('Refresh token não encontrado');
         }
 
@@ -72,10 +72,10 @@ export const useAuth = create<AuthState>()(
 );
 
 // Hook personalizado para proteção de rotas
-export function useRequireAuth(): void {
+export function useRequireAuth() {
   const { user, isLoading } = useAuth();
-  
-  if (typeof window !== 'undefined' && !isLoading && !user) { {
+
+  if (typeof window !== 'undefined' && !isLoading && !user) {
     window.location.href = '/login';
     return null;
   }
@@ -89,13 +89,13 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) { {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         const auth = useAuth.getState();
         const newToken = await auth.refreshAccessToken();
-        
+
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {

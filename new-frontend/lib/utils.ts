@@ -6,7 +6,7 @@ import { twMerge } from 'tailwind-merge';
  * @param inputs Classes CSS a serem combinadas
  * @returns String com as classes CSS combinadas
  */
-export function cn(): void {
+export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
@@ -17,11 +17,7 @@ export function cn(): void {
  * @param currency Moeda para formatação (padrão: BRL)
  * @returns String formatada com o valor monetário
  */
-export function formatCurrency(
-  value: number | string,
-  locale = 'pt-BR',
-  currency = 'BRL'
-): string {
+export function formatCurrency(value: number | string, locale = 'pt-BR', currency = 'BRL'): string {
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -52,7 +48,7 @@ export function formatDate(date: Date | string, locale = 'pt-BR'): string {
 export function formatPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{2})(\d{4,5})(\d{4})$/);
-  if (match) { {
+  if (match) {
     return `(${match[1]}) ${match[2]}-${match[3]}`;
   }
   return phone;
@@ -66,7 +62,7 @@ export function formatPhone(phone: string): string {
 export function formatCPF(cpf: string): string {
   const cleaned = cpf.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{3})(\d{3})(\d{3})(\d{2})$/);
-  if (match) { {
+  if (match) {
     return `${match[1]}.${match[2]}.${match[3]}-${match[4]}`;
   }
   return cpf;
@@ -80,7 +76,7 @@ export function formatCPF(cpf: string): string {
 export function formatCNPJ(cnpj: string): string {
   const cleaned = cnpj.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/);
-  if (match) { {
+  if (match) {
     return `${match[1]}.${match[2]}.${match[3]}/${match[4]}-${match[5]}`;
   }
   return cnpj;
@@ -94,7 +90,7 @@ export function formatCNPJ(cnpj: string): string {
 export function formatCEP(cep: string): string {
   const cleaned = cep.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{5})(\d{3})$/);
-  if (match) { {
+  if (match) {
     return `${match[1]}-${match[2]}`;
   }
   return cep;
@@ -124,7 +120,9 @@ export function slugify(str: string): string {
  * @returns String truncada
  */
 export function truncate(str: string, length: number, suffix = '...'): string {
-  if (str.length <= length)  {return str;
+  if (str.length <= length) {
+    return str;
+  }
   return str.substring(0, length - suffix.length) + suffix;
 }
 
@@ -185,11 +183,14 @@ export function shuffle<T>(arr: T[]): T[] {
  * @returns Objeto com os grupos
  */
 export function groupBy<T>(arr: T[], key: keyof T): Record<string, T[]> {
-  return arr.reduce((groups, item) => {
-    const groupKey = String(item[key]);
-    return {
-      ...groups,
-      [groupKey]: [...(groups[groupKey] || []), item],
-    };
-  }, {} as Record<string, T[]>);
+  return arr.reduce(
+    (groups, item) => {
+      const groupKey = String(item[key]);
+      return {
+        ...groups,
+        [groupKey]: [...(groups[groupKey] || []), item],
+      };
+    },
+    {} as Record<string, T[]>
+  );
 }
