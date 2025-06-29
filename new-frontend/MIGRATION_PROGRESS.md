@@ -33,12 +33,12 @@
 - ✅ Admin Plans consolidado e atualizado
 - ✅ Admin Reports consolidado (removidos 4 arquivos fracionados)
 - ✅ Admin Users consolidado (removidos 2 arquivos fracionados)
+- ✅ Admin System Tests consolidado (removido arquivo fracionado)
 - ✅ Integração com nova estrutura de API
 
 ## 🔄 Em Progresso
 
 ### 5. Consolidação de Páginas Fracionadas
-- ⏳ Admin System Tests (page-part1)
 - ⏳ Customer Dashboard (page-part1, page-part2)
 
 ## 📋 Próximos Passos
