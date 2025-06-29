@@ -32,9 +32,20 @@ export interface PriceUpdate {
   created_date?: string;
 }
 
+
 export interface Expense {
   id: string;
   created_date?: string;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  max_subscriptions: number;
+  max_products: number | null;
+  status: 'active' | 'inactive';
 }
 
 export const InvoiceAPI = {
@@ -65,4 +76,13 @@ export const PriceUpdateAPI = {
 export const ExpenseAPI = {
   list: (orderBy: string, limit: number) =>
     apiClient.get<Expense[]>('/expenses', { params: { orderBy, limit } }).then(res => res.data),
+};
+
+export const PlanAPI = {
+  list: (orderBy: string) =>
+    apiClient.get<Plan[]>('/plans', { params: { orderBy } }).then(res => res.data),
+  create: (data: Partial<Plan>) =>
+    apiClient.post('/plans', data).then(res => res.data),
+  update: (id: string, data: Partial<Plan>) =>
+    apiClient.put(`/plans/${id}`, data).then(res => res.data),
 };
